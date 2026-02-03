@@ -315,35 +315,39 @@ PROMPT;
     return redirect()->route('scanner.index', ['scan' => $scan->id]);
 })->middleware('auth')->name('scanner.store');
 
-function extract_openai_text(array $response): ?string
-{
-    $output = $response['output'] ?? [];
-    foreach ($output as $item) {
-        $content = $item['content'] ?? [];
-        foreach ($content as $part) {
-            if (isset($part['text']) && is_string($part['text'])) {
-                return $part['text'];
+if (!function_exists('extract_openai_text')) {
+    function extract_openai_text(array $response): ?string
+    {
+        $output = $response['output'] ?? [];
+        foreach ($output as $item) {
+            $content = $item['content'] ?? [];
+            foreach ($content as $part) {
+                if (isset($part['text']) && is_string($part['text'])) {
+                    return $part['text'];
+                }
             }
         }
-    }
 
-    return $response['output_text'] ?? null;
+        return $response['output_text'] ?? null;
+    }
 }
 
-function parse_openai_json(?string $text): array
-{
-    if (!$text) {
-        throw new RuntimeException('Missing OpenAI response text.');
+if (!function_exists('parse_openai_json')) {
+    function parse_openai_json(?string $text): array
+    {
+        if (!$text) {
+            throw new RuntimeException('Missing OpenAI response text.');
+        }
+
+        $clean = trim($text);
+        $clean = preg_replace('/^```json\\s*/', '', $clean);
+        $clean = preg_replace('/```$/', '', $clean);
+
+        $decoded = json_decode($clean, true);
+        if (!is_array($decoded)) {
+            throw new RuntimeException('Unable to parse JSON from OpenAI response.');
+        }
+
+        return $decoded;
     }
-
-    $clean = trim($text);
-    $clean = preg_replace('/^```json\\s*/', '', $clean);
-    $clean = preg_replace('/```$/', '', $clean);
-
-    $decoded = json_decode($clean, true);
-    if (!is_array($decoded)) {
-        throw new RuntimeException('Unable to parse JSON from OpenAI response.');
-    }
-
-    return $decoded;
 }
