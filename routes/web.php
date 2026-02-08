@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\AnalyzeImageUpload;
+use App\Services\WasteScanAnalyzer;
 
 Route::get('/', function (Request $request) {
     $viewer = $request->user();
@@ -373,142 +374,7 @@ Route::post('/scanner', function (Request $request) {
     ]);
 
     try {
-        $disk = Storage::disk('public');
-        $imageData = $disk->get($scan->file_path);
-        $mime = $disk->mimeType($scan->file_path) ?? 'image/jpeg';
-        $imageUrl = 'data:' . $mime . ';base64,' . base64_encode($imageData);
-
-        $apiKey = config('services.openai.key');
-        $model = config('services.openai.model', 'gpt-4.1-mini');
-
-        if (!$apiKey) {
-            throw new RuntimeException('OpenAI API key missing.');
-        }
-
-        $prompt = <<<PROMPT
-Kthe vetëm JSON me fushat:
-- item_type (string, p.sh. plastikë, qelq, metal, organike)
-- recyclable (boolean | null)
-- instructions (string, udhëzime të qarta riciklimi, 6-7 fjali)
-- warnings (string opsionale)
-
-Nëse imazhi NUK duket si mbetje/objekt riciklimi (p.sh. logo, dokument, kafshë, peizazh):
-- vendos item_type: "e paidentifikueshme"
-- vendos recyclable: null
-- vendos instructions: "Ky imazh nuk duket si mbetje për riciklim. Ngarko një foto të një objekti/mbetjeje për udhëzime."
-- vendos warnings vetëm nëse ka arsye reale.
-
-Udhëzime për `instructions` kur është mbetje e vlefshme:
-- Shkruaj 6-7 fjali të plota, jo lista.
-- Përfshi 3-4 hapa konkretë (p.sh. pastrim, ndarje kapak/etiketë, tharje).
-- Shto ku ta dërgojnë (kosh riciklimi, pikë grumbullimi, mbetje të përziera nëse s’riciklohet).
-- Përmend nëse ka variante lokale (p.sh. nëse qelqi grumbullohet veç).
-- Përdor gjuhë të thjeshtë dhe fjali të shkurtra.
-
-Përgjigju vetëm me JSON.
-PROMPT;
-
-        $makeRequest = function (string $promptText) use ($model, $apiKey, $imageUrl) {
-            return Http::timeout(60)
-                ->retry(2, 500)
-                ->withToken($apiKey)
-                ->post('https://api.openai.com/v1/responses', [
-                    'model' => $model,
-                    'input' => [
-                        [
-                            'role' => 'user',
-                            'content' => [
-                                ['type' => 'input_text', 'text' => $promptText],
-                                ['type' => 'input_image', 'image_url' => $imageUrl],
-                            ],
-                        ],
-                    ],
-                    'temperature' => 0,
-                    'max_output_tokens' => 650,
-                ]);
-        };
-
-        $response = $makeRequest($prompt);
-
-        if (!$response->ok()) {
-            throw new RuntimeException('OpenAI API error: ' . $response->status());
-        }
-
-        $responseJson = $response->json();
-        $analysisText = extract_openai_text($responseJson);
-        $analysis = parse_openai_json($analysisText);
-
-        $instructions = (string) ($analysis['instructions'] ?? '');
-        $itemType = mb_strtolower((string) ($analysis['item_type'] ?? ''));
-        $recyclable = $analysis['recyclable'] ?? null;
-
-        $sentenceCount = preg_match_all('/[.!?]+/', $instructions);
-        $needsRetry = $itemType !== 'e paidentifikueshme'
-            && $recyclable !== null
-            && ($sentenceCount < 6 || mb_strlen($instructions) < 240);
-
-        if ($needsRetry) {
-            $retryPrompt = $prompt . "\n\nKërkesë shtesë: përgjigju me 6-7 fjali të plota në `instructions`, minimumi 240 karaktere. Mos përdor lista ose pika.";
-            $retryResponse = $makeRequest($retryPrompt);
-
-            if ($retryResponse->ok()) {
-                $retryJson = $retryResponse->json();
-                $retryText = extract_openai_text($retryJson);
-                $analysis = parse_openai_json($retryText);
-                $responseJson = $retryJson;
-            }
-        }
-
-        $instructions = (string) ($analysis['instructions'] ?? '');
-        $itemType = mb_strtolower((string) ($analysis['item_type'] ?? ''));
-        $recyclable = $analysis['recyclable'] ?? null;
-        $sentenceCount = preg_match_all('/[.!?]+/', $instructions);
-        $isUnknown = $itemType === 'e paidentifikueshme';
-        $needsFallback = !$isUnknown && ($sentenceCount < 6 || mb_strlen($instructions) < 240);
-
-        $typeLabel = $itemType ?: 'mbetje';
-        $disposal = $recyclable ? 'koshin e riciklimit ose pikën e grumbullimit' : 'mbetjet e përziera';
-        $extra = $recyclable
-            ? 'Nëse komuna juaj ka rregulla të veçanta, ndiqni udhëzimet lokale për këtë material.'
-            : 'Nëse materiali ka përbërje të përziera, kërkoni pikë grumbullimi të specializuar.';
-
-        $templates = [
-            'organike' => "Mblidhni mbeturinat organike si mbetje ushqimore ose të kopshtit dhe largoni çdo pjesë jo organike. Nëse ka lëngje ose papastërti, hiqini lehtë që të mos krijoni aromë të fortë. Vendosini në enë të posaçme për organike ose në një komposter të mbyllur. Përzieni herë pas here për ajrosje nëse kompostoni në shtëpi. Në mungesë kompostimi, dërgojini në {$disposal} sipas udhëzimeve lokale. {$extra}",
-            'plastikë' => "Identifikoni llojin e plastikës dhe hiqni mbetjet e ushqimit ose papastërtitë. Shpëlajeni shpejt dhe lëreni të thahet që të mos ndotë materialet e tjera. Hiqni kapakët ose etiketat nëse janë materiale të ndryshme. Shtrydhni shishet për të kursyer hapësirë dhe ruajini të ndara. Dërgojini në {$disposal} sipas kategorisë së plastikës. {$extra}",
-            'qelq' => "Mblidhni qelqin veçmas dhe hiqni mbetjet e ushqimit ose lëngjet. Shpëlajeni lehtë dhe lëreni të thahet para dorëzimit. Hiqni kapakët metalikë ose plastikë dhe ndajini veç. Mos përzieni qelqin me qeramikë ose pasqyra sepse nuk riciklohen njësoj. Dërgojeni në {$disposal} ose në kontejnerët e veçantë për qelq. {$extra}",
-            'metal' => "Mblidhni metalet veçmas dhe hiqni papastërtitë ose mbetjet e ushqimit. Shpëlajini lehtë dhe lërini të thahen para dorëzimit. Nda kapakët ose pjesët e tjera jo metalike që mund të hiqen. Nëse ka kanaçe, shtypini lehtë për të kursyer hapësirë. Dërgojini në {$disposal} ose në qendra riciklimi metalesh. {$extra}",
-            'letra' => "Mblidhni letrën dhe kartonin të thatë dhe hiqni elementët plastikë ose metalikë. Mos e përzieni me letër të lagur ose të ndotur me vaj. Paloseni ose shtrydheni për të kursyer hapësirë. Nda kartonin e trashë nga letra e hollë nëse ka udhëzime të veçanta. Dërgojeni në {$disposal} në ditët e grumbullimit ose në pika të dedikuara. {$extra}",
-        ];
-
-        $normalizedType = $itemType;
-        if ($normalizedType && !isset($templates[$normalizedType])) {
-            if (mb_stripos($normalizedType, 'metal') !== false) {
-                $normalizedType = 'metal';
-            } elseif (mb_stripos($normalizedType, 'plastik') !== false) {
-                $normalizedType = 'plastikë';
-            } elseif (mb_stripos($normalizedType, 'qelq') !== false) {
-                $normalizedType = 'qelq';
-            } elseif (mb_stripos($normalizedType, 'organ') !== false) {
-                $normalizedType = 'organike';
-            } elseif (mb_stripos($normalizedType, 'letr') !== false || mb_stripos($normalizedType, 'karton') !== false) {
-                $normalizedType = 'letra';
-            }
-        }
-
-        if (!$isUnknown && isset($templates[$normalizedType])) {
-            $analysis['instructions'] = $templates[$normalizedType];
-        } elseif ($needsFallback) {
-            $analysis['instructions'] = "Identifiko materialin si {$typeLabel} dhe verifiko nëse është i pastër. Hiq mbetjet e ushqimit ose papastërtitë dhe shpëlaje lehtë nëse është e nevojshme. Nda komponentët shtesë si kapakë, etiketë ose pjesë metalike që mund të ndahen. Lëre të thahet që të mos kontaminojë materialet e tjera. Dërgoje në {$disposal}, duke e vendosur të veçuar sipas llojit të materialit. {$extra}";
-        }
-
-        $scan->update([
-            'item_type' => $analysis['item_type'] ?? null,
-            'recyclable' => isset($analysis['recyclable']) ? (bool) $analysis['recyclable'] : null,
-            'instructions' => $analysis['instructions'] ?? null,
-            'warnings' => $analysis['warnings'] ?? null,
-            'raw_output' => $responseJson,
-            'model_name' => $responseJson['model'] ?? $model,
-        ]);
+        $scan->update(WasteScanAnalyzer::analyze($scan));
     } catch (Throwable $e) {
         return redirect()->route('scanner.index')
             ->withErrors(['image' => 'Analiza dështoi. Provoni përsëri.']);
@@ -516,6 +382,27 @@ PROMPT;
 
     return redirect()->route('scanner.index', ['scan' => $scan->id]);
 })->middleware('auth')->name('scanner.store');
+
+Route::get('/admin/scanner', function () {
+    abort_unless(auth()->check() && auth()->user()->is_admin, 403);
+
+    $recentScans = WasteScan::query()->latest()->take(12)->get();
+
+    return view('scanner.admin', compact('recentScans'));
+})->middleware('auth')->name('scanner.admin');
+
+Route::post('/scanner/{scan}/reanalyze', function (WasteScan $scan) {
+    abort_unless(auth()->check() && auth()->user()->is_admin, 403);
+
+    try {
+        $scan->update(WasteScanAnalyzer::analyze($scan));
+    } catch (Throwable $e) {
+        return redirect()->route('scanner.index', ['scan' => $scan->id])
+            ->withErrors(['image' => 'Rianaliza dështoi. Provoni përsëri.']);
+    }
+
+    return redirect()->route('scanner.index', ['scan' => $scan->id]);
+})->middleware('auth')->name('scanner.reanalyze');
 
 if (!function_exists('extract_openai_text')) {
     function extract_openai_text(array $response): ?string

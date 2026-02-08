@@ -885,6 +885,9 @@
                     <a class="btn btn-ghost" href="{{ route('dashboard') }}">Paneli</a>
                     <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Ngarkimet</a>
                     <a class="btn btn-ghost" href="{{ route('scanner.index') }}">Skaneri</a>
+                    @if (auth()->user()->is_admin)
+                        <a class="btn btn-ghost" href="{{ route('scanner.admin') }}">Admin Skaner</a>
+                    @endif
                     <a class="btn btn-ghost" href="{{ route('zones.index') }}">Zonat</a>
                     <a class="btn btn-ghost" href="{{ route('map.index') }}">Harta</a>
                     <form method="POST" action="{{ route('logout') }}">

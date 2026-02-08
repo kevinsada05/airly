@@ -23,6 +23,16 @@
                         <p>{{ $scan->warnings }}</p>
                     </div>
                 @endif
+                @auth
+                    @if (auth()->user()->is_admin)
+                        <div style="margin-top: 16px;">
+                            <form method="POST" action="{{ route('scanner.reanalyze', $scan) }}">
+                                @csrf
+                                <button class="btn btn-ghost" type="submit">Rianalizo</button>
+                            </form>
+                        </div>
+                    @endif
+                @endauth
             </div>
         </div>
     @endif
