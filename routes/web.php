@@ -466,22 +466,39 @@ PROMPT;
         $isUnknown = $itemType === 'e paidentifikueshme';
         $needsFallback = !$isUnknown && ($sentenceCount < 6 || mb_strlen($instructions) < 240);
 
-        if ($needsFallback) {
-            $typeLabel = $itemType ?: 'mbetje';
-            $disposal = $recyclable ? 'koshin e riciklimit ose pikën e grumbullimit' : 'mbetjet e përziera';
-            $extra = $recyclable
-                ? 'Nëse komuna juaj ka rregulla të veçanta, ndiqni udhëzimet lokale për këtë material.'
-                : 'Nëse materiali ka përbërje të përziera, kërkoni pikë grumbullimi të specializuar.';
+        $typeLabel = $itemType ?: 'mbetje';
+        $disposal = $recyclable ? 'koshin e riciklimit ose pikën e grumbullimit' : 'mbetjet e përziera';
+        $extra = $recyclable
+            ? 'Nëse komuna juaj ka rregulla të veçanta, ndiqni udhëzimet lokale për këtë material.'
+            : 'Nëse materiali ka përbërje të përziera, kërkoni pikë grumbullimi të specializuar.';
 
-            $templates = [
-                'organike' => "Mblidhni mbeturinat organike si mbetje ushqimore ose të kopshtit dhe largoni çdo pjesë jo organike. Nëse ka lëngje ose papastërti, hiqini lehtë që të mos krijoni aromë të fortë. Vendosini në enë të posaçme për organike ose në një komposter të mbyllur. Përzieni herë pas here për ajrosje nëse kompostoni në shtëpi. Në mungesë kompostimi, dërgojini në {$disposal} sipas udhëzimeve lokale. {$extra}",
-                'plastikë' => "Identifikoni llojin e plastikës dhe hiqni mbetjet e ushqimit ose papastërtitë. Shpëlajeni shpejt dhe lëreni të thahet që të mos ndotë materialet e tjera. Hiqni kapakët ose etiketat nëse janë materiale të ndryshme. Shtrydhni shishet për të kursyer hapësirë dhe ruajini të ndara. Dërgojini në {$disposal} sipas kategorisë së plastikës. {$extra}",
-                'qelq' => "Mblidhni qelqin veçmas dhe hiqni mbetjet e ushqimit ose lëngjet. Shpëlajeni lehtë dhe lëreni të thahet para dorëzimit. Hiqni kapakët metalikë ose plastikë dhe ndajini veç. Mos përzieni qelqin me qeramikë ose pasqyra sepse nuk riciklohen njësoj. Dërgojeni në {$disposal} ose në kontejnerët e veçantë për qelq. {$extra}",
-                'metal' => "Mblidhni metalet veçmas dhe hiqni papastërtitë ose mbetjet e ushqimit. Shpëlajini lehtë dhe lërini të thahen para dorëzimit. Nda kapakët ose pjesët e tjera jo metalike që mund të hiqen. Nëse ka kanaçe, shtypini lehtë për të kursyer hapësirë. Dërgojini në {$disposal} ose në qendra riciklimi metalesh. {$extra}",
-                'letra' => "Mblidhni letrën dhe kartonin të thatë dhe hiqni elementët plastikë ose metalikë. Mos e përzieni me letër të lagur ose të ndotur me vaj. Paloseni ose shtrydheni për të kursyer hapësirë. Nda kartonin e trashë nga letra e hollë nëse ka udhëzime të veçanta. Dërgojeni në {$disposal} në ditët e grumbullimit ose në pika të dedikuara. {$extra}",
-            ];
+        $templates = [
+            'organike' => "Mblidhni mbeturinat organike si mbetje ushqimore ose të kopshtit dhe largoni çdo pjesë jo organike. Nëse ka lëngje ose papastërti, hiqini lehtë që të mos krijoni aromë të fortë. Vendosini në enë të posaçme për organike ose në një komposter të mbyllur. Përzieni herë pas here për ajrosje nëse kompostoni në shtëpi. Në mungesë kompostimi, dërgojini në {$disposal} sipas udhëzimeve lokale. {$extra}",
+            'plastikë' => "Identifikoni llojin e plastikës dhe hiqni mbetjet e ushqimit ose papastërtitë. Shpëlajeni shpejt dhe lëreni të thahet që të mos ndotë materialet e tjera. Hiqni kapakët ose etiketat nëse janë materiale të ndryshme. Shtrydhni shishet për të kursyer hapësirë dhe ruajini të ndara. Dërgojini në {$disposal} sipas kategorisë së plastikës. {$extra}",
+            'qelq' => "Mblidhni qelqin veçmas dhe hiqni mbetjet e ushqimit ose lëngjet. Shpëlajeni lehtë dhe lëreni të thahet para dorëzimit. Hiqni kapakët metalikë ose plastikë dhe ndajini veç. Mos përzieni qelqin me qeramikë ose pasqyra sepse nuk riciklohen njësoj. Dërgojeni në {$disposal} ose në kontejnerët e veçantë për qelq. {$extra}",
+            'metal' => "Mblidhni metalet veçmas dhe hiqni papastërtitë ose mbetjet e ushqimit. Shpëlajini lehtë dhe lërini të thahen para dorëzimit. Nda kapakët ose pjesët e tjera jo metalike që mund të hiqen. Nëse ka kanaçe, shtypini lehtë për të kursyer hapësirë. Dërgojini në {$disposal} ose në qendra riciklimi metalesh. {$extra}",
+            'letra' => "Mblidhni letrën dhe kartonin të thatë dhe hiqni elementët plastikë ose metalikë. Mos e përzieni me letër të lagur ose të ndotur me vaj. Paloseni ose shtrydheni për të kursyer hapësirë. Nda kartonin e trashë nga letra e hollë nëse ka udhëzime të veçanta. Dërgojeni në {$disposal} në ditët e grumbullimit ose në pika të dedikuara. {$extra}",
+        ];
 
-            $analysis['instructions'] = $templates[$itemType] ?? "Identifiko materialin si {$typeLabel} dhe verifiko nëse është i pastër. Hiq mbetjet e ushqimit ose papastërtitë dhe shpëlaje lehtë nëse është e nevojshme. Nda komponentët shtesë si kapakë, etiketë ose pjesë metalike që mund të ndahen. Lëre të thahet që të mos kontaminojë materialet e tjera. Dërgoje në {$disposal}, duke e vendosur të veçuar sipas llojit të materialit. {$extra}";
+        $normalizedType = $itemType;
+        if ($normalizedType && !isset($templates[$normalizedType])) {
+            if (mb_stripos($normalizedType, 'metal') !== false) {
+                $normalizedType = 'metal';
+            } elseif (mb_stripos($normalizedType, 'plastik') !== false) {
+                $normalizedType = 'plastikë';
+            } elseif (mb_stripos($normalizedType, 'qelq') !== false) {
+                $normalizedType = 'qelq';
+            } elseif (mb_stripos($normalizedType, 'organ') !== false) {
+                $normalizedType = 'organike';
+            } elseif (mb_stripos($normalizedType, 'letr') !== false || mb_stripos($normalizedType, 'karton') !== false) {
+                $normalizedType = 'letra';
+            }
+        }
+
+        if (!$isUnknown && isset($templates[$normalizedType])) {
+            $analysis['instructions'] = $templates[$normalizedType];
+        } elseif ($needsFallback) {
+            $analysis['instructions'] = "Identifiko materialin si {$typeLabel} dhe verifiko nëse është i pastër. Hiq mbetjet e ushqimit ose papastërtitë dhe shpëlaje lehtë nëse është e nevojshme. Nda komponentët shtesë si kapakë, etiketë ose pjesë metalike që mund të ndahen. Lëre të thahet që të mos kontaminojë materialet e tjera. Dërgoje në {$disposal}, duke e vendosur të veçuar sipas llojit të materialit. {$extra}";
         }
 
         $scan->update([
