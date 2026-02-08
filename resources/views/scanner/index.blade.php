@@ -2,30 +2,6 @@
 
 @section('content')
 <section class="section">
-    <div class="split">
-        <div>
-            <div class="eyebrow">♻️ Skaneri Personal</div>
-            <h2>Udhëzime për riciklim</h2>
-            <p class="lead">Ngarko një foto të një mbetjeje dhe merr udhëzime të qarta për riciklimin.</p>
-        </div>
-    </div>
-
-    <div class="card" style="margin-top: 18px;">
-        @if ($errors->any())
-            <div class="alert">
-                {{ $errors->first() }}
-            </div>
-        @endif
-        <form class="form" method="POST" action="{{ route('scanner.store') }}" enctype="multipart/form-data">
-            @csrf
-            <div class="field">
-                <label for="image">Foto e mbetjes (JPG/PNG)</label>
-                <input id="image" name="image" type="file" accept="image/jpeg,image/png" required>
-            </div>
-            <button class="btn btn-primary" type="submit">Analizo</button>
-        </form>
-    </div>
-
     @if ($scan)
         <div class="grid-2" style="margin-top: 18px; align-items: start;">
             <div class="card">
@@ -50,5 +26,25 @@
             </div>
         </div>
     @endif
+
+    <div class="section" style="padding: 0; margin-top: 22px;">
+        <div class="eyebrow">🧪 Skanimet e fundit</div>
+        <h2>Rezultate të publikuara</h2>
+        <div class="features" style="margin-top: 18px;">
+            @forelse ($recentScans as $recentScan)
+                <a class="feature" href="{{ route('scanner.index', ['scan' => $recentScan->id]) }}" style="display: block;">
+                    <img src="{{ url('/storage/' . $recentScan->file_path) }}" alt="Mbetja" style="width: 100%; border-radius: 14px; display: block; margin-bottom: 10px;">
+                    <strong>{{ $recentScan->item_type ?? '—' }}</strong>
+                    <p>Riciklueshme: {{ $recentScan->recyclable === null ? '—' : ($recentScan->recyclable ? 'Po' : 'Jo') }}</p>
+                    <p>Shfaq detajet</p>
+                </a>
+            @empty
+                <div class="feature">
+                    <strong>Nuk ka skanime ende</strong>
+                    <p>Rezultatet publike do të shfaqen sapo administratori të shtojë skanime.</p>
+                </div>
+            @endforelse
+        </div>
+    </div>
 </section>
 @endsection

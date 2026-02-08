@@ -6,14 +6,63 @@ use App\Models\Zone;
 use App\Models\WasteScan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\AnalyzeImageUpload;
 
-Route::get('/', function () {
-    return view('home');
+if (!function_exists('admin_user_id')) {
+    function admin_user_id(): ?int
+    {
+        static $adminId = null;
+        if ($adminId !== null) {
+            return $adminId;
+        }
+
+        $adminId = User::query()->where('is_admin', true)->value('id');
+
+        return $adminId;
+    }
+}
+
+Route::get('/', function (Request $request) {
+    $viewer = $request->user();
+    $adminId = admin_user_id();
+
+    $visibleIds = [];
+    if ($adminId) {
+        $visibleIds[] = $adminId;
+    }
+    if ($viewer && !$viewer->is_admin) {
+        $visibleIds[] = $viewer->id;
+    }
+
+    $uploadsQuery = ImageUpload::query()
+        ->with('analysisResult')
+        ->latest();
+
+    if (!$viewer || !$viewer->is_admin) {
+        if ($visibleIds) {
+            $uploadsQuery->whereIn('user_id', $visibleIds);
+        } else {
+            $uploadsQuery->whereRaw('1=0');
+        }
+    }
+
+    $scansQuery = WasteScan::query()->latest();
+    if (!$viewer || !$viewer->is_admin) {
+        if ($visibleIds) {
+            $scansQuery->whereIn('user_id', $visibleIds);
+        } else {
+            $scansQuery->whereRaw('1=0');
+        }
+    }
+
+    $recentUploads = $uploadsQuery->take(6)->get();
+    $recentScans = $scansQuery->take(6)->get();
+    $zones = Zone::query()->orderBy('name')->take(6)->get();
+
+    return view('home', compact('recentUploads', 'recentScans', 'zones'));
 })->name('home');
 
 Route::get('/login', function () {
@@ -41,35 +90,6 @@ Route::post('/login', function (Request $request) {
     ])->onlyInput('email');
 })->middleware('guest')->name('login.submit');
 
-Route::get('/register', function () {
-    return view('auth.register');
-})->middleware('guest')->name('register');
-
-Route::post('/register', function (Request $request) {
-    $data = $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-        'password' => ['required', 'string', 'min:8', 'confirmed'],
-    ], [
-        'name.required' => 'Emri është i detyrueshëm.',
-        'email.required' => 'Email është i detyrueshëm.',
-        'email.email' => 'Email nuk është i vlefshëm.',
-        'email.unique' => 'Ky email është përdorur tashmë.',
-        'password.required' => 'Fjalëkalimi është i detyrueshëm.',
-        'password.min' => 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.',
-        'password.confirmed' => 'Konfirmimi i fjalëkalimit nuk përputhet.',
-    ]);
-
-    $user = User::create([
-        'name' => $data['name'],
-        'email' => $data['email'],
-        'password' => Hash::make($data['password']),
-    ]);
-
-    Auth::login($user);
-
-    return redirect('/dashboard');
-})->middleware('guest')->name('register.submit');
 
 Route::post('/logout', function (Request $request) {
     Auth::logout();
@@ -120,14 +140,33 @@ Route::get('/dashboard', function () {
 })->middleware('auth')->name('dashboard');
 
 Route::get('/uploads', function (Request $request) {
-    $uploads = ImageUpload::query()
-        ->where('user_id', $request->user()->id)
+    $viewer = $request->user();
+    $adminId = admin_user_id();
+
+    $query = ImageUpload::query()
         ->with('wasteScan')
-        ->latest()
-        ->paginate(12);
+        ->latest();
+
+    if (!$viewer || !$viewer->is_admin) {
+        $visibleIds = [];
+        if ($adminId) {
+            $visibleIds[] = $adminId;
+        }
+        if ($viewer) {
+            $visibleIds[] = $viewer->id;
+        }
+
+        if ($visibleIds) {
+            $query->whereIn('user_id', $visibleIds);
+        } else {
+            $query->whereRaw('1=0');
+        }
+    }
+
+    $uploads = $query->paginate(12);
 
     return view('uploads.index', compact('uploads'));
-})->middleware('auth')->name('uploads.index');
+})->name('uploads.index');
 
 Route::get('/uploads/create', function () {
     return view('uploads.create');
@@ -171,37 +210,97 @@ Route::post('/uploads', function (Request $request) {
 })->middleware('auth')->name('uploads.store');
 
 Route::get('/uploads/{upload}', function (ImageUpload $upload, Request $request) {
-    abort_unless($upload->user_id === $request->user()->id, 403);
+    $viewer = $request->user();
+    $adminId = admin_user_id();
+
+    if (!$viewer || !$viewer->is_admin) {
+        $visibleIds = [];
+        if ($adminId) {
+            $visibleIds[] = $adminId;
+        }
+        if ($viewer) {
+            $visibleIds[] = $viewer->id;
+        }
+
+        abort_unless($visibleIds && in_array($upload->user_id, $visibleIds, true), 403);
+    }
 
     $imageUrl = $request->getSchemeAndHttpHost() . '/storage/' . $upload->file_path;
 
     $upload->load(['wasteScan', 'zones']);
 
     return view('uploads.show', compact('upload', 'imageUrl'));
-})->middleware('auth')->name('uploads.show');
+})->name('uploads.show');
 
-Route::get('/zones', function () {
-    $zones = Zone::query()
-        ->withCount('imageUploads')
-        ->orderBy('name')
-        ->get();
+Route::get('/zones', function (Request $request) {
+    $viewer = $request->user();
+    $adminId = admin_user_id();
+
+    $zonesQuery = Zone::query()->orderBy('name');
+
+    if (!$viewer || !$viewer->is_admin) {
+        $visibleIds = [];
+        if ($adminId) {
+            $visibleIds[] = $adminId;
+        }
+        if ($viewer) {
+            $visibleIds[] = $viewer->id;
+        }
+
+        if ($visibleIds) {
+            $zonesQuery->withCount([
+                'imageUploads as image_uploads_count' => function ($query) use ($visibleIds) {
+                    $query->whereIn('image_uploads.user_id', $visibleIds);
+                },
+            ]);
+        } else {
+            $zonesQuery->withCount([
+                'imageUploads as image_uploads_count' => function ($query) {
+                    $query->whereRaw('1=0');
+                },
+            ]);
+        }
+    } else {
+        $zonesQuery->withCount('imageUploads');
+    }
+
+    $zones = $zonesQuery->get();
 
     return view('zones.index', compact('zones'));
-})->middleware('auth')->name('zones.index');
+})->name('zones.index');
 
-Route::get('/zones/{zone}', function (Zone $zone) {
-    $zone->load(['imageUploads.analysisResult']);
+Route::get('/zones/{zone}', function (Zone $zone, Request $request) {
+    $viewer = $request->user();
+    $adminId = admin_user_id();
 
-    $uploads = $zone->imageUploads()
-        ->latest()
-        ->get()
+    $uploadsQuery = $zone->imageUploads()
+        ->with('analysisResult')
+        ->latest();
+
+    if (!$viewer || !$viewer->is_admin) {
+        $visibleIds = [];
+        if ($adminId) {
+            $visibleIds[] = $adminId;
+        }
+        if ($viewer) {
+            $visibleIds[] = $viewer->id;
+        }
+
+        if ($visibleIds) {
+            $uploadsQuery->whereIn('image_uploads.user_id', $visibleIds);
+        } else {
+            $uploadsQuery->whereRaw('1=0');
+        }
+    }
+
+    $uploads = $uploadsQuery->get()
         ->map(function (ImageUpload $upload) {
             $upload->image_url = url('/storage/' . $upload->file_path);
             return $upload;
         });
 
     return view('zones.show', compact('zone', 'uploads'));
-})->middleware('auth')->name('zones.show');
+})->name('zones.show');
 
 Route::get('/map', function () {
     $zones = Zone::query()->get()->map(function (Zone $zone) {
@@ -216,23 +315,59 @@ Route::get('/map', function () {
     return view('map.index', [
         'zonesJson' => $zones->toJson(),
     ]);
-})->middleware('auth')->name('map.index');
+})->name('map.index');
 
 Route::get('/scanner', function (Request $request) {
+    $viewer = $request->user();
+    $adminId = admin_user_id();
+
     $scanId = $request->query('scan');
     $scan = null;
 
     if ($scanId) {
-        $scan = WasteScan::query()
-            ->where('id', $scanId)
-            ->where('user_id', $request->user()->id)
-            ->first();
+        $scanQuery = WasteScan::query()->where('id', $scanId);
+
+        if (!$viewer || !$viewer->is_admin) {
+            $visibleIds = [];
+            if ($adminId) {
+                $visibleIds[] = $adminId;
+            }
+            if ($viewer) {
+                $visibleIds[] = $viewer->id;
+            }
+
+            if ($visibleIds) {
+                $scanQuery->whereIn('user_id', $visibleIds);
+            } else {
+                $scanQuery->whereRaw('1=0');
+            }
+        }
+
+        $scan = $scanQuery->first();
     }
 
+    $recentScansQuery = WasteScan::query()->latest();
+    if (!$viewer || !$viewer->is_admin) {
+        $visibleIds = [];
+        if ($adminId) {
+            $visibleIds[] = $adminId;
+        }
+        if ($viewer) {
+            $visibleIds[] = $viewer->id;
+        }
+
+        if ($visibleIds) {
+            $recentScansQuery->whereIn('user_id', $visibleIds);
+        } else {
+            $recentScansQuery->whereRaw('1=0');
+        }
+    }
+
+    $recentScans = $recentScansQuery->take(8)->get();
     $imageUrl = $scan ? $request->getSchemeAndHttpHost() . '/storage/' . $scan->file_path : null;
 
-    return view('scanner.index', compact('scan', 'imageUrl'));
-})->middleware('auth')->name('scanner.index');
+    return view('scanner.index', compact('scan', 'imageUrl', 'recentScans'));
+})->name('scanner.index');
 
 Route::post('/scanner', function (Request $request) {
     $data = $request->validate([
@@ -265,31 +400,49 @@ Route::post('/scanner', function (Request $request) {
         }
 
         $prompt = <<<PROMPT
-Kthe një JSON me fushat:
+Kthe vetëm JSON me fushat:
 - item_type (string, p.sh. plastikë, qelq, metal, organike)
-- recyclable (boolean)
-- instructions (string, udhëzime të qarta riciklimi)
+- recyclable (boolean | null)
+- instructions (string, udhëzime të qarta riciklimi, 6-7 fjali)
 - warnings (string opsionale)
+
+Nëse imazhi NUK duket si mbetje/objekt riciklimi (p.sh. logo, dokument, kafshë, peizazh):
+- vendos item_type: "e paidentifikueshme"
+- vendos recyclable: null
+- vendos instructions: "Ky imazh nuk duket si mbetje për riciklim. Ngarko një foto të një objekti/mbetjeje për udhëzime."
+- vendos warnings vetëm nëse ka arsye reale.
+
+Udhëzime për `instructions` kur është mbetje e vlefshme:
+- Shkruaj 6-7 fjali të plota, jo lista.
+- Përfshi 3-4 hapa konkretë (p.sh. pastrim, ndarje kapak/etiketë, tharje).
+- Shto ku ta dërgojnë (kosh riciklimi, pikë grumbullimi, mbetje të përziera nëse s’riciklohet).
+- Përmend nëse ka variante lokale (p.sh. nëse qelqi grumbullohet veç).
+- Përdor gjuhë të thjeshtë dhe fjali të shkurtra.
+
 Përgjigju vetëm me JSON.
 PROMPT;
 
-        $response = Http::timeout(60)
-            ->retry(2, 500)
-            ->withToken($apiKey)
-            ->post('https://api.openai.com/v1/responses', [
-                'model' => $model,
-                'input' => [
-                    [
-                        'role' => 'user',
-                        'content' => [
-                            ['type' => 'input_text', 'text' => $prompt],
-                            ['type' => 'input_image', 'image_url' => $imageUrl],
+        $makeRequest = function (string $promptText) use ($model, $apiKey, $imageUrl) {
+            return Http::timeout(60)
+                ->retry(2, 500)
+                ->withToken($apiKey)
+                ->post('https://api.openai.com/v1/responses', [
+                    'model' => $model,
+                    'input' => [
+                        [
+                            'role' => 'user',
+                            'content' => [
+                                ['type' => 'input_text', 'text' => $promptText],
+                                ['type' => 'input_image', 'image_url' => $imageUrl],
+                            ],
                         ],
                     ],
-                ],
-                'temperature' => 0,
-                'max_output_tokens' => 250,
-            ]);
+                    'temperature' => 0,
+                    'max_output_tokens' => 650,
+                ]);
+        };
+
+        $response = $makeRequest($prompt);
 
         if (!$response->ok()) {
             throw new RuntimeException('OpenAI API error: ' . $response->status());
@@ -298,6 +451,52 @@ PROMPT;
         $responseJson = $response->json();
         $analysisText = extract_openai_text($responseJson);
         $analysis = parse_openai_json($analysisText);
+
+        $instructions = (string) ($analysis['instructions'] ?? '');
+        $itemType = mb_strtolower((string) ($analysis['item_type'] ?? ''));
+        $recyclable = $analysis['recyclable'] ?? null;
+
+        $sentenceCount = preg_match_all('/[.!?]+/', $instructions);
+        $needsRetry = $itemType !== 'e paidentifikueshme'
+            && $recyclable !== null
+            && ($sentenceCount < 6 || mb_strlen($instructions) < 240);
+
+        if ($needsRetry) {
+            $retryPrompt = $prompt . "\n\nKërkesë shtesë: përgjigju me 6-7 fjali të plota në `instructions`, minimumi 240 karaktere. Mos përdor lista ose pika.";
+            $retryResponse = $makeRequest($retryPrompt);
+
+            if ($retryResponse->ok()) {
+                $retryJson = $retryResponse->json();
+                $retryText = extract_openai_text($retryJson);
+                $analysis = parse_openai_json($retryText);
+                $responseJson = $retryJson;
+            }
+        }
+
+        $instructions = (string) ($analysis['instructions'] ?? '');
+        $itemType = mb_strtolower((string) ($analysis['item_type'] ?? ''));
+        $recyclable = $analysis['recyclable'] ?? null;
+        $sentenceCount = preg_match_all('/[.!?]+/', $instructions);
+        $isUnknown = $itemType === 'e paidentifikueshme';
+        $needsFallback = !$isUnknown && ($sentenceCount < 6 || mb_strlen($instructions) < 240);
+
+        if ($needsFallback) {
+            $typeLabel = $itemType ?: 'mbetje';
+            $disposal = $recyclable ? 'koshin e riciklimit ose pikën e grumbullimit' : 'mbetjet e përziera';
+            $extra = $recyclable
+                ? 'Nëse komuna juaj ka rregulla të veçanta, ndiqni udhëzimet lokale për këtë material.'
+                : 'Nëse materiali ka përbërje të përziera, kërkoni pikë grumbullimi të specializuar.';
+
+            $templates = [
+                'organike' => "Mblidhni mbeturinat organike si mbetje ushqimore ose të kopshtit dhe largoni çdo pjesë jo organike. Nëse ka lëngje ose papastërti, hiqini lehtë që të mos krijoni aromë të fortë. Vendosini në enë të posaçme për organike ose në një komposter të mbyllur. Përzieni herë pas here për ajrosje nëse kompostoni në shtëpi. Në mungesë kompostimi, dërgojini në {$disposal} sipas udhëzimeve lokale. {$extra}",
+                'plastikë' => "Identifikoni llojin e plastikës dhe hiqni mbetjet e ushqimit ose papastërtitë. Shpëlajeni shpejt dhe lëreni të thahet që të mos ndotë materialet e tjera. Hiqni kapakët ose etiketat nëse janë materiale të ndryshme. Shtrydhni shishet për të kursyer hapësirë dhe ruajini të ndara. Dërgojini në {$disposal} sipas kategorisë së plastikës. {$extra}",
+                'qelq' => "Mblidhni qelqin veçmas dhe hiqni mbetjet e ushqimit ose lëngjet. Shpëlajeni lehtë dhe lëreni të thahet para dorëzimit. Hiqni kapakët metalikë ose plastikë dhe ndajini veç. Mos përzieni qelqin me qeramikë ose pasqyra sepse nuk riciklohen njësoj. Dërgojeni në {$disposal} ose në kontejnerët e veçantë për qelq. {$extra}",
+                'metal' => "Mblidhni metalet veçmas dhe hiqni papastërtitë ose mbetjet e ushqimit. Shpëlajini lehtë dhe lërini të thahen para dorëzimit. Nda kapakët ose pjesët e tjera jo metalike që mund të hiqen. Nëse ka kanaçe, shtypini lehtë për të kursyer hapësirë. Dërgojini në {$disposal} ose në qendra riciklimi metalesh. {$extra}",
+                'letra' => "Mblidhni letrën dhe kartonin të thatë dhe hiqni elementët plastikë ose metalikë. Mos e përzieni me letër të lagur ose të ndotur me vaj. Paloseni ose shtrydheni për të kursyer hapësirë. Nda kartonin e trashë nga letra e hollë nëse ka udhëzime të veçanta. Dërgojeni në {$disposal} në ditët e grumbullimit ose në pika të dedikuara. {$extra}",
+            ];
+
+            $analysis['instructions'] = $templates[$itemType] ?? "Identifiko materialin si {$typeLabel} dhe verifiko nëse është i pastër. Hiq mbetjet e ushqimit ose papastërtitë dhe shpëlaje lehtë nëse është e nevojshme. Nda komponentët shtesë si kapakë, etiketë ose pjesë metalike që mund të ndahen. Lëre të thahet që të mos kontaminojë materialet e tjera. Dërgoje në {$disposal}, duke e vendosur të veçuar sipas llojit të materialit. {$extra}";
+        }
 
         $scan->update([
             'item_type' => $analysis['item_type'] ?? null,

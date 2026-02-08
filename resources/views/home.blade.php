@@ -48,8 +48,8 @@
     </div>
 </section>
 
-<section class="section section-alt">
-    <div class="container">
+<section class="section section-alt" style="padding: 56px 0;">
+    <div class="container" style="padding-left: 48px; padding-right: 16px;">
         <div class="eyebrow">🧭 Si funksionon</div>
         <h2>Proces i thjeshtë, me hapa të qartë</h2>
         <div class="steps-row">
@@ -146,6 +146,97 @@
                 <p>Ngjyra standarde për nivelin e ndotjes.</p>
             </div>
         </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="split">
+        <div>
+            <div class="eyebrow">🖼️ Evidenca e fundit</div>
+            <h2>Imazhet e publikuara</h2>
+            <p class="lead">Këto janë ngarkimet më të fundit nga administratori, të hapura për publikun.</p>
+        </div>
+        <div style="text-align: right;">
+            <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Shiko të gjitha</a>
+        </div>
+    </div>
+    <div class="features" style="margin-top: 18px;">
+        @forelse ($recentUploads as $upload)
+            <a class="feature" href="{{ route('uploads.show', $upload) }}" style="display: block;">
+                <img src="{{ url('/storage/' . $upload->file_path) }}" alt="Imazhi" style="width: 100%; border-radius: 16px; display: block; margin-bottom: 10px;">
+                <strong>Status: @php
+                    $status = $upload->status->value ?? $upload->status;
+                    $labels = ['pending' => 'Në pritje', 'processing' => 'Në përpunim', 'processed' => 'E përfunduar', 'failed' => 'Dështoi'];
+                @endphp
+                {{ $labels[$status] ?? $status }}</strong>
+                <p>Koordinata: {{ $upload->lat }}, {{ $upload->lng }}</p>
+                <p>Ngarkuar: {{ $upload->created_at->locale('sq')->translatedFormat('d F Y') }}</p>
+            </a>
+        @empty
+            <div class="feature">
+                <strong>Nuk ka imazhe ende</strong>
+                <p>Imazhet do të shfaqen sapo administratori të publikojë të parat.</p>
+            </div>
+        @endforelse
+    </div>
+</section>
+
+<section class="section section-alt">
+    <div class="split" style="padding-left: 48px; padding-right: 16px;">
+        <div>
+            <div class="eyebrow">🗺️ Zonat e monitoruara</div>
+            <h2>Zona me intensitet të ndotjes</h2>
+            <p class="lead">Një përmbledhje e shpejtë e zonave kryesore të monitoruara.</p>
+        </div>
+        <div style="text-align: right;">
+            <a class="btn btn-ghost" href="{{ route('zones.index') }}">Shiko zonat</a>
+        </div>
+    </div>
+    <div class="features" style="margin-top: 18px;">
+        @forelse ($zones as $zone)
+            <a class="feature" href="{{ route('zones.show', $zone) }}" style="display: block;">
+                <strong>{{ $zone->name }}</strong>
+                <p>Ngjyra: @php
+                    $sev = $zone->current_severity->value ?? $zone->current_severity;
+                    $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                @endphp
+                {{ $labels[$sev] ?? '—' }}</p>
+                <p>Hap zonën për detaje</p>
+            </a>
+        @empty
+            <div class="feature">
+                <strong>Nuk ka zona ende</strong>
+                <p>Zona do të shfaqen sapo të ketë analiza të reja.</p>
+            </div>
+        @endforelse
+    </div>
+</section>
+
+<section class="section">
+    <div class="split">
+        <div>
+            <div class="eyebrow">♻️ Skanimet publike</div>
+            <h2>Rezultate riciklimi</h2>
+            <p class="lead">Shembuj të skanimeve të publikuara me udhëzime të qarta.</p>
+        </div>
+        <div style="text-align: right;">
+            <a class="btn btn-ghost" href="{{ route('scanner.index') }}">Shiko skanimet</a>
+        </div>
+    </div>
+    <div class="features" style="margin-top: 18px;">
+        @forelse ($recentScans as $scan)
+            <a class="feature" href="{{ route('scanner.index', ['scan' => $scan->id]) }}" style="display: block;">
+                <img src="{{ url('/storage/' . $scan->file_path) }}" alt="Mbetja" style="width: 100%; border-radius: 16px; display: block; margin-bottom: 10px;">
+                <strong>{{ $scan->item_type ?? '—' }}</strong>
+                <p>Riciklueshme: {{ $scan->recyclable === null ? '—' : ($scan->recyclable ? 'Po' : 'Jo') }}</p>
+                <p>Shfaq detajet</p>
+            </a>
+        @empty
+            <div class="feature">
+                <strong>Nuk ka skanime ende</strong>
+                <p>Rezultatet do të shfaqen sapo të publikohen skanime.</p>
+            </div>
+        @endforelse
     </div>
 </section>
 @endsection

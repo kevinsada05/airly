@@ -25,7 +25,7 @@
         <div class="card">
             <div class="eyebrow">Lokacioni</div>
             <h3>{{ $upload->lat }}, {{ $upload->lng }}</h3>
-            <p>Ngarkuar: {{ $upload->created_at->format('d.m.Y H:i') }}</p>
+            <p>Ngarkuar: {{ $upload->created_at->locale('sq')->translatedFormat('d F Y') }}</p>
             <div style="margin-top: 12px;">
                 <div class="eyebrow">Rezultati</div>
                 @if ($upload->analysisResult)

@@ -33,7 +33,6 @@
                     <input id="password_confirmation" name="password_confirmation" type="password" required>
                 </div>
                 <button class="btn btn-primary" type="submit">Regjistrohu</button>
-                <a class="btn btn-ghost" href="{{ route('login') }}">Kyçu</a>
             </form>
         </div>
     </div>

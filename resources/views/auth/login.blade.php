@@ -30,7 +30,6 @@
                     </label>
                 </div>
                 <button class="btn btn-primary" type="submit">Kyçu</button>
-                <a class="btn btn-ghost" href="{{ route('register') }}">Regjistrohu</a>
             </form>
         </div>
     </div>
