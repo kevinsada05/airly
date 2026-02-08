@@ -11,23 +11,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\AnalyzeImageUpload;
 
-if (!function_exists('admin_user_id')) {
-    function admin_user_id(): ?int
-    {
-        static $adminId = null;
-        if ($adminId !== null) {
-            return $adminId;
-        }
-
-        $adminId = User::query()->where('is_admin', true)->value('id');
-
-        return $adminId;
-    }
-}
-
 Route::get('/', function (Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     $visibleIds = [];
     if ($adminId) {
@@ -141,7 +127,7 @@ Route::get('/dashboard', function () {
 
 Route::get('/uploads', function (Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     $query = ImageUpload::query()
         ->with('wasteScan')
@@ -211,7 +197,7 @@ Route::post('/uploads', function (Request $request) {
 
 Route::get('/uploads/{upload}', function (ImageUpload $upload, Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     if (!$viewer || !$viewer->is_admin) {
         $visibleIds = [];
@@ -234,7 +220,7 @@ Route::get('/uploads/{upload}', function (ImageUpload $upload, Request $request)
 
 Route::get('/zones', function (Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     $zonesQuery = Zone::query()->orderBy('name');
 
@@ -271,7 +257,7 @@ Route::get('/zones', function (Request $request) {
 
 Route::get('/zones/{zone}', function (Zone $zone, Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     $uploadsQuery = $zone->imageUploads()
         ->with('analysisResult')
@@ -319,7 +305,7 @@ Route::get('/map', function () {
 
 Route::get('/scanner', function (Request $request) {
     $viewer = $request->user();
-    $adminId = admin_user_id();
+    $adminId = User::query()->where('is_admin', true)->value('id');
 
     $scanId = $request->query('scan');
     $scan = null;
