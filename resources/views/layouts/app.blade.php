@@ -844,10 +844,138 @@
             font-size: 13px;
         }
 
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(16, 24, 16, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 9999;
+        }
+
+        .modal-backdrop.open {
+            display: flex;
+        }
+
+        .modal {
+            width: min(520px, 92vw);
+            background: #fff;
+            border-radius: 18px;
+            padding: 22px;
+            border: 1px solid var(--border);
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
+        }
+
+        .modal h3 {
+            margin-bottom: 8px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 18px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        @media (max-width: 700px) {
+            .action-bar {
+                width: 100%;
+                justify-content: flex-start;
+            }
+
+            .action-bar .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .btn-danger {
+            background: #d64545;
+            color: #fff;
+            border: 1px solid #c83a3a;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(0.95);
+        }
+
+        .nav-toggle {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--ink);
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        .nav-toggle span {
+            width: 18px;
+            height: 2px;
+            background: var(--ink);
+            display: block;
+            position: relative;
+        }
+
+        .nav-toggle span::before,
+        .nav-toggle span::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 18px;
+            height: 2px;
+            background: var(--ink);
+        }
+
+        .nav-toggle span::before {
+            top: -6px;
+        }
+
+        .nav-toggle span::after {
+            top: 6px;
+        }
+
         @media (max-width: 700px) {
             .nav {
                 flex-direction: column;
                 align-items: flex-start;
+            }
+
+            .nav-top {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            .nav-toggle {
+                display: inline-flex;
+            }
+
+            .nav-links {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+                padding-top: 14px;
+                display: none;
+            }
+
+            .nav-links.open {
+                display: flex;
             }
 
             .card {
@@ -879,8 +1007,14 @@
 <body>
     <div class="page">
         <nav class="nav">
-            <a class="logo" href="{{ route('home') }}">Airly</a>
-            <div class="nav-links">
+            <div class="nav-top">
+                <a class="logo" href="{{ route('home') }}">Airly</a>
+                <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links">
+                    <span></span>
+                    Menu
+                </button>
+            </div>
+            <div class="nav-links" id="nav-links">
                 @auth
                     <a class="btn btn-ghost" href="{{ route('dashboard') }}">Paneli</a>
                     <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Ngarkimet</a>
@@ -909,5 +1043,62 @@
             Monitorim i ndotjes me prova vizuale nga dronët dhe fotografia në terren.
         </footer>
     </div>
+
+    <div class="modal-backdrop" id="confirm-modal" aria-hidden="true">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+            <h3 id="confirm-title">Konfirmo fshirjen</h3>
+            <p>Je i sigurt që dëshiron ta fshish këtë ngarkim? Ky veprim fshin edhe analizat dhe evidencën.</p>
+            <form method="POST" id="confirm-form">
+                @csrf
+                @method('DELETE')
+                <div class="modal-actions">
+                    <button class="btn btn-ghost" type="button" id="confirm-cancel">Anulo</button>
+                    <button class="btn btn-primary" type="submit">Fshi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const navToggle = document.querySelector('.nav-toggle');
+        const navLinks = document.getElementById('nav-links');
+
+        if (navToggle && navLinks) {
+            navToggle.addEventListener('click', () => {
+                const isOpen = navLinks.classList.toggle('open');
+                navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+        }
+
+        const modal = document.getElementById('confirm-modal');
+        const modalForm = document.getElementById('confirm-form');
+        const cancelBtn = document.getElementById('confirm-cancel');
+
+        document.querySelectorAll('.js-delete-upload').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-action');
+                if (!action || !modal || !modalForm) return;
+                modalForm.setAttribute('action', action);
+                modal.classList.add('open');
+                modal.setAttribute('aria-hidden', 'false');
+            });
+        });
+
+        if (cancelBtn && modal) {
+            cancelBtn.addEventListener('click', () => {
+                modal.classList.remove('open');
+                modal.setAttribute('aria-hidden', 'true');
+            });
+        }
+
+        if (modal) {
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    modal.classList.remove('open');
+                    modal.setAttribute('aria-hidden', 'true');
+                }
+            });
+        }
+    </script>
 </body>
 </html>

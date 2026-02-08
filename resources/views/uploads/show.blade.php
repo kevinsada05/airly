@@ -12,9 +12,16 @@
             @endphp
             {{ $labels[$status] ?? $status }}</p>
         </div>
-        <div style="text-align: right;">
+        <div class="action-bar">
             <a class="btn btn-primary" href="{{ route('map.index') }}">Shiko në hartë</a>
             <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Kthehu te lista</a>
+            @auth
+                @if (auth()->user()->is_admin)
+                    <button class="btn btn-danger js-delete-upload" type="button" data-action="{{ route('uploads.destroy', $upload) }}">
+                        Fshi ngarkimin
+                    </button>
+                @endif
+            @endauth
         </div>
     </div>
 
@@ -23,9 +30,13 @@
             <img src="{{ $imageUrl }}" alt="Imazhi i ngarkuar" style="width: 100%; border-radius: 18px; display: block;">
         </div>
         <div class="card">
-            <div class="eyebrow">Lokacioni</div>
-            <h3>{{ $upload->lat }}, {{ $upload->lng }}</h3>
+            <div class="eyebrow">Vendodhja</div>
+            <h3 id="upload-address">Duke kërkuar adresën...</h3>
+            <p id="upload-coordinates">Koordinata: {{ $upload->lat }}, {{ $upload->lng }}</p>
             <p>Ngarkuar: {{ $upload->created_at->locale('sq')->translatedFormat('d F Y') }}</p>
+            <div class="card" style="padding: 0; overflow: hidden; margin-top: 12px;">
+                <div id="upload-map" style="height: 220px; width: 100%;"></div>
+            </div>
             <div style="margin-top: 12px;">
                 <div class="eyebrow">Rezultati</div>
                 @if ($upload->analysisResult)
@@ -80,4 +91,46 @@
         </div>
     </div>
 </section>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    const uploadLat = {{ $upload->lat }};
+    const uploadLng = {{ $upload->lng }};
+    const map = L.map('upload-map').setView([uploadLat, uploadLng], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    L.marker([uploadLat, uploadLng]).addTo(map);
+
+    const addressEl = document.getElementById('upload-address');
+    const coordsEl = document.getElementById('upload-coordinates');
+    coordsEl.textContent = `Koordinata: ${uploadLat.toFixed(6)}, ${uploadLng.toFixed(6)}`;
+
+    (async () => {
+        try {
+            const url = new URL('https://nominatim.openstreetmap.org/reverse');
+            url.searchParams.set('format', 'jsonv2');
+            url.searchParams.set('lat', uploadLat);
+            url.searchParams.set('lon', uploadLng);
+            url.searchParams.set('zoom', '18');
+
+            const res = await fetch(url.toString(), {
+                headers: { 'Accept': 'application/json' }
+            });
+
+            if (!res.ok) {
+                throw new Error('Failed');
+            }
+
+            const data = await res.json();
+            addressEl.textContent = data.display_name || 'Adresë e papërcaktuar';
+        } catch (e) {
+            addressEl.textContent = 'Adresë e papërcaktuar';
+        }
+    })();
+</script>
 @endsection

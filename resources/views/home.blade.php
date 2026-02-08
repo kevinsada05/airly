@@ -108,7 +108,7 @@
 </section>
 
 <section class="section section-contrast">
-    <div class="container split split-tight centered">
+    <div class="container split split-tight centered" style="padding-left: 24px; padding-right: 24px;">
         <div class="text-narrow center-text">
             <div class="eyebrow">✨ Pse Airly</div>
             <h2>Ndotja shfaqet qartë kur prova është vizuale</h2>
@@ -160,7 +160,7 @@
             <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Shiko të gjitha</a>
         </div>
     </div>
-    <div class="features" style="margin-top: 18px;">
+    <div class="features" style="margin-top: 18px; padding-left: 32px; padding-right: 32px;">
         @forelse ($recentUploads as $upload)
             <a class="feature" href="{{ route('uploads.show', $upload) }}" style="display: block;">
                 <img src="{{ url('/storage/' . $upload->file_path) }}" alt="Imazhi" style="width: 100%; border-radius: 16px; display: block; margin-bottom: 10px;">
@@ -194,7 +194,7 @@
     </div>
     <div class="features" style="margin-top: 18px;">
         @forelse ($zones as $zone)
-            <a class="feature" href="{{ route('zones.show', $zone) }}" style="display: block;">
+            <a class="feature" href="{{ route('zones.show', $zone) }}" style="display: block; padding: 20px 22px; margin: 0 10px;">
                 <strong>{{ $zone->name }}</strong>
                 <p>Ngjyra: @php
                     $sev = $zone->current_severity->value ?? $zone->current_severity;
@@ -204,7 +204,7 @@
                 <p>Hap zonën për detaje</p>
             </a>
         @empty
-            <div class="feature">
+            <div class="feature" style="padding: 20px 22px; margin: 0 10px;">
                 <strong>Nuk ka zona ende</strong>
                 <p>Zona do të shfaqen sapo të ketë analiza të reja.</p>
             </div>

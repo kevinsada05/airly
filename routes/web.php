@@ -218,11 +218,30 @@ Route::get('/uploads/{upload}', function (ImageUpload $upload, Request $request)
     return view('uploads.show', compact('upload', 'imageUrl'));
 })->name('uploads.show');
 
+Route::delete('/uploads/{upload}', function (ImageUpload $upload, Request $request) {
+    $viewer = $request->user();
+    abort_unless($viewer && $viewer->is_admin, 403);
+
+    try {
+        Storage::disk('public')->delete($upload->file_path);
+    } catch (Throwable $e) {
+        // Continue even if file deletion fails.
+    }
+
+    $upload->analysisResult()?->delete();
+    $upload->wasteScan()?->delete();
+    $upload->zones()->detach();
+    $upload->delete();
+
+    return redirect()->route('uploads.index');
+})->middleware('auth')->name('uploads.destroy');
+
 Route::get('/zones', function (Request $request) {
     $viewer = $request->user();
     $adminId = User::query()->where('is_admin', true)->value('id');
 
-    $zonesQuery = Zone::query()->orderBy('name');
+    $zonesQuery = Zone::query()->orderByRaw("case current_severity when 'red' then 1 when 'orange' then 2 when 'green' then 3 else 4 end")
+        ->orderBy('name');
 
     if (!$viewer || !$viewer->is_admin) {
         $visibleIds = [];
