@@ -15,6 +15,7 @@ class WasteScan extends Model
         'image_upload_id',
         'file_path',
         'item_type',
+        'severity',
         'recyclable',
         'instructions',
         'warnings',

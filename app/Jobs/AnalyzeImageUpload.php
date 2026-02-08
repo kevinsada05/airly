@@ -8,6 +8,7 @@ use App\Models\AnalysisResult;
 use App\Models\ImageUpload;
 use App\Models\Zone;
 use App\Models\WasteScan;
+use App\Services\WasteScanAnalyzer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -180,64 +181,12 @@ PROMPT;
     private function analyzeRecycling(ImageUpload $upload, string $imageUrl): void
     {
         try {
-            $apiKey = config('services.openai.key');
-            $model = config('services.openai.model', 'gpt-4.1-mini');
-
-            if (!$apiKey) {
-                return;
-            }
-
-            $prompt = <<<PROMPT
-Kthe një JSON me fushat:
-- item_type (string, p.sh. plastikë, qelq, metal, organike)
-- recyclable (boolean)
-- instructions (string, udhëzime të qarta riciklimi)
-- warnings (string opsionale)
-Përgjigju vetëm me JSON.
-PROMPT;
-
-            $response = Http::timeout(60)
-                ->retry(2, 500)
-                ->withToken($apiKey)
-                ->post('https://api.openai.com/v1/responses', [
-                    'model' => $model,
-                    'input' => [
-                        [
-                            'role' => 'user',
-                            'content' => [
-                                ['type' => 'input_text', 'text' => $prompt],
-                                ['type' => 'input_image', 'image_url' => $imageUrl],
-                            ],
-                        ],
-                    ],
-                    'temperature' => 0,
-                    'max_output_tokens' => 250,
-                ]);
-
-            if (!$response->ok()) {
-                return;
-            }
-
-            $responseJson = $response->json();
-            $analysisText = $this->extractText($responseJson);
-
-            if (!$analysisText) {
-                return;
-            }
-
-            $analysis = $this->parseJson($analysisText);
-
             WasteScan::query()->updateOrCreate(
                 ['image_upload_id' => $upload->id],
                 [
                     'user_id' => $upload->user_id,
                     'file_path' => $upload->file_path,
-                    'item_type' => $analysis['item_type'] ?? null,
-                    'recyclable' => isset($analysis['recyclable']) ? (bool) $analysis['recyclable'] : null,
-                    'instructions' => $analysis['instructions'] ?? null,
-                    'warnings' => $analysis['warnings'] ?? null,
-                    'raw_output' => $responseJson,
-                    'model_name' => $responseJson['model'] ?? $model,
+                    ...WasteScanAnalyzer::analyzeFile($upload->file_path),
                 ]
             );
         } catch (\Throwable $e) {

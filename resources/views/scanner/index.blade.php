@@ -10,6 +10,11 @@
             <div class="card">
                 <div class="eyebrow">Rezultati</div>
                 <h3>{{ $scan->item_type ?? '—' }}</h3>
+                <p>Rreziku: @php
+                    $sev = $scan->severity;
+                    $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                @endphp
+                {{ $labels[$sev] ?? '—' }}</p>
                 <p>Riciklueshme: {{ $scan->recyclable === null ? '—' : ($scan->recyclable ? 'Po' : 'Jo') }}</p>
                 @if ($scan->instructions)
                     <div style="margin-top: 12px;">
@@ -23,16 +28,6 @@
                         <p>{{ $scan->warnings }}</p>
                     </div>
                 @endif
-                @auth
-                    @if (auth()->user()->is_admin)
-                        <div style="margin-top: 16px;">
-                            <form method="POST" action="{{ route('scanner.reanalyze', $scan) }}">
-                                @csrf
-                                <button class="btn btn-ghost" type="submit">Rianalizo</button>
-                            </form>
-                        </div>
-                    @endif
-                @endauth
             </div>
         </div>
     @endif
@@ -41,13 +36,18 @@
         <div class="eyebrow">🧪 Skanimet e fundit</div>
         <h2>Rezultate të publikuara</h2>
         <div class="features" style="margin-top: 18px;">
-            @forelse ($recentScans as $recentScan)
-                <a class="feature" href="{{ route('scanner.index', ['scan' => $recentScan->id]) }}" style="display: block;">
-                    <img src="{{ url('/storage/' . $recentScan->file_path) }}" alt="Mbetja" style="width: 100%; border-radius: 14px; display: block; margin-bottom: 10px;">
-                    <strong>{{ $recentScan->item_type ?? '—' }}</strong>
-                    <p>Riciklueshme: {{ $recentScan->recyclable === null ? '—' : ($recentScan->recyclable ? 'Po' : 'Jo') }}</p>
-                    <p>Shfaq detajet</p>
-                </a>
+        @forelse ($recentScans as $recentScan)
+            <a class="feature" href="{{ route('scanner.index', ['scan' => $recentScan->id]) }}" style="display: block;">
+                <img src="{{ url('/storage/' . $recentScan->file_path) }}" alt="Mbetja" style="width: 100%; border-radius: 14px; display: block; margin-bottom: 10px;">
+                <strong>{{ $recentScan->item_type ?? '—' }}</strong>
+                <p>Rreziku: @php
+                    $sev = $recentScan->severity;
+                    $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                @endphp
+                {{ $labels[$sev] ?? '—' }}</p>
+                <p>Riciklueshme: {{ $recentScan->recyclable === null ? '—' : ($recentScan->recyclable ? 'Po' : 'Jo') }}</p>
+                <p>Shfaq detajet</p>
+            </a>
             @empty
                 <div class="feature">
                     <strong>Nuk ka skanime ende</strong>

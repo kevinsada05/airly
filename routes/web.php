@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\AnalyzeImageUpload;
-use App\Services\WasteScanAnalyzer;
 
 Route::get('/', function (Request $request) {
     $viewer = $request->user();
@@ -356,53 +355,6 @@ Route::get('/scanner', function (Request $request) {
     return view('scanner.index', compact('scan', 'imageUrl', 'recentScans'));
 })->name('scanner.index');
 
-Route::post('/scanner', function (Request $request) {
-    $data = $request->validate([
-        'image' => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:8192'],
-    ], [
-        'image.required' => 'Imazhi është i detyrueshëm.',
-        'image.image' => 'Skedari duhet të jetë imazh.',
-        'image.mimes' => 'Lejohen vetëm JPG/PNG.',
-        'image.max' => 'Madhësia maksimale është 8MB.',
-    ]);
-
-    $path = $request->file('image')->store('scans', 'public');
-
-    $scan = WasteScan::create([
-        'user_id' => $request->user()->id,
-        'file_path' => $path,
-    ]);
-
-    try {
-        $scan->update(WasteScanAnalyzer::analyze($scan));
-    } catch (Throwable $e) {
-        return redirect()->route('scanner.index')
-            ->withErrors(['image' => 'Analiza dështoi. Provoni përsëri.']);
-    }
-
-    return redirect()->route('scanner.index', ['scan' => $scan->id]);
-})->middleware('auth')->name('scanner.store');
-
-Route::get('/admin/scanner', function () {
-    abort_unless(auth()->check() && auth()->user()->is_admin, 403);
-
-    $recentScans = WasteScan::query()->latest()->take(12)->get();
-
-    return view('scanner.admin', compact('recentScans'));
-})->middleware('auth')->name('scanner.admin');
-
-Route::post('/scanner/{scan}/reanalyze', function (WasteScan $scan) {
-    abort_unless(auth()->check() && auth()->user()->is_admin, 403);
-
-    try {
-        $scan->update(WasteScanAnalyzer::analyze($scan));
-    } catch (Throwable $e) {
-        return redirect()->route('scanner.index', ['scan' => $scan->id])
-            ->withErrors(['image' => 'Rianaliza dështoi. Provoni përsëri.']);
-    }
-
-    return redirect()->route('scanner.index', ['scan' => $scan->id]);
-})->middleware('auth')->name('scanner.reanalyze');
 
 if (!function_exists('extract_openai_text')) {
     function extract_openai_text(array $response): ?string
