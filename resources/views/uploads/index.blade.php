@@ -55,23 +55,18 @@
     </div>
 
     @if ($uploads->hasPages())
-        <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div style="color: var(--muted); font-size: 14px;">
-                Faqja {{ $uploads->currentPage() }} / {{ $uploads->lastPage() }}
-            </div>
-            <div style="display: flex; gap: 10px;">
-                @if ($uploads->onFirstPage())
-                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;" aria-hidden="true">←</span>
-                @else
-                    <a class="btn btn-ghost" href="{{ $uploads->previousPageUrl() }}" aria-label="Faqja e mëparshme">←</a>
-                @endif
+        <div style="margin-top: 18px; display: flex; justify-content: center; gap: 10px;">
+            @if ($uploads->onFirstPage())
+                <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">←</span>
+            @else
+                <a class="btn btn-ghost" href="{{ $uploads->previousPageUrl() }}">←</a>
+            @endif
 
-                @if ($uploads->hasMorePages())
-                    <a class="btn btn-ghost" href="{{ $uploads->nextPageUrl() }}" aria-label="Faqja tjetër">→</a>
-                @else
-                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;" aria-hidden="true">→</span>
-                @endif
-            </div>
+            @if ($uploads->hasMorePages())
+                <a class="btn btn-ghost" href="{{ $uploads->nextPageUrl() }}">→</a>
+            @else
+                <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">→</span>
+            @endif
         </div>
     @endif
 </section>
