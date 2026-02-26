@@ -61,15 +61,15 @@
             </div>
             <div style="display: flex; gap: 10px;">
                 @if ($uploads->onFirstPage())
-                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">Mbrapa</span>
+                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;" aria-hidden="true">←</span>
                 @else
-                    <a class="btn btn-ghost" href="{{ $uploads->previousPageUrl() }}">Mbrapa</a>
+                    <a class="btn btn-ghost" href="{{ $uploads->previousPageUrl() }}" aria-label="Faqja e mëparshme">←</a>
                 @endif
 
                 @if ($uploads->hasMorePages())
-                    <a class="btn btn-ghost" href="{{ $uploads->nextPageUrl() }}">Përpara</a>
+                    <a class="btn btn-ghost" href="{{ $uploads->nextPageUrl() }}" aria-label="Faqja tjetër">→</a>
                 @else
-                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">Përpara</span>
+                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;" aria-hidden="true">→</span>
                 @endif
             </div>
         </div>

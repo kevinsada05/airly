@@ -884,6 +884,7 @@
             padding: 30px 6vw 40px;
             color: var(--muted);
             font-size: 13px;
+            text-align: center;
         }
 
         @media (max-width: 700px) {
