@@ -2,6 +2,32 @@
 
 @section('content')
 <section class="section">
+    @if ($scan)
+        <div class="grid-2" style="margin-bottom: 18px; align-items: start;">
+            <div class="card">
+                <img src="{{ $imageUrl }}" alt="Mbetja e zgjedhur" style="width: 100%; border-radius: 14px; display: block;">
+            </div>
+            <div class="card">
+                <div class="eyebrow">Rezultati i zgjedhur</div>
+                <h3>{{ $scan->item_type ?? '—' }}</h3>
+                <p>Rreziku:
+                    @php
+                        $sev = $scan->severity;
+                        $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                    @endphp
+                    {{ $labels[$sev] ?? '—' }}
+                </p>
+                <p>Riciklueshme: {{ $scan->recyclable === null ? '—' : ($scan->recyclable ? 'Po' : 'Jo') }}</p>
+                @if ($scan->instructions)
+                    <p>Udhëzime: {{ $scan->instructions }}</p>
+                @endif
+                @if ($scan->warnings)
+                    <p>Paralajmërime: {{ $scan->warnings }}</p>
+                @endif
+            </div>
+        </div>
+    @endif
+
     <div class="section" style="padding: 0; margin-top: 22px;">
         <div class="eyebrow">🧪 Skanimet e fundit</div>
         <h2>Rezultate të publikuara</h2>

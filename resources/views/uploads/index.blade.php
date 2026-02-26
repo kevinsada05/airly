@@ -54,8 +54,25 @@
         @endforelse
     </div>
 
-    <div style="margin-top: 18px;">
-        {{ $uploads->links() }}
-    </div>
+    @if ($uploads->hasPages())
+        <div style="margin-top: 18px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="color: var(--muted); font-size: 14px;">
+                Faqja {{ $uploads->currentPage() }} / {{ $uploads->lastPage() }}
+            </div>
+            <div style="display: flex; gap: 10px;">
+                @if ($uploads->onFirstPage())
+                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">Mbrapa</span>
+                @else
+                    <a class="btn btn-ghost" href="{{ $uploads->previousPageUrl() }}">Mbrapa</a>
+                @endif
+
+                @if ($uploads->hasMorePages())
+                    <a class="btn btn-ghost" href="{{ $uploads->nextPageUrl() }}">Përpara</a>
+                @else
+                    <span class="btn btn-ghost" style="opacity: .5; pointer-events: none;">Përpara</span>
+                @endif
+            </div>
+        </div>
+    @endif
 </section>
 @endsection
