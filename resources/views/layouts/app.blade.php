@@ -4,9 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $title ?? 'Airly' }}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Space+Grotesk:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/hangout">
+    <link href="https://fonts.cdnfonts.com/css/hagrid-trial?styles=52966" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/quicksand" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/unbounded" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/auromiya" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/maria-2" rel="stylesheet">
     <style>
         :root {
             --bg: #f5f4ee;
@@ -26,7 +29,7 @@
 
         body {
             margin: 0;
-            font-family: 'Patrick Hand', 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'unbounded', sans-serif;
             background: radial-gradient(circle at top, #f1f4ee 0%, var(--bg) 45%, #faf5ea 100%);
             color: var(--ink);
         }
@@ -55,9 +58,9 @@
         }
 
         .logo {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'Quarantype hangout', sans-serif;
             font-weight: 700;
-            font-size: 22px;
+            font-size: 50px;
             letter-spacing: 0.5px;
         }
 
@@ -77,7 +80,7 @@
             border-radius: 999px;
             border: 1px solid transparent;
             font-weight: 600;
-            font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'hagrid text trial', sans-serif;
             transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
             cursor: pointer;
         }
@@ -102,6 +105,45 @@
         .btn-ghost:hover {
             border-color: var(--brand);
             color: var(--brand);
+        }
+
+        .nav-toggle {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: var(--ink);
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 600;
+            font-family: 'unbounded', sans-serif;
+        }
+
+        .nav-toggle span {
+            width: 18px;
+            height: 2px;
+            background: var(--ink);
+            display: block;
+            position: relative;
+        }
+
+        .nav-toggle span::before,
+        .nav-toggle span::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            width: 18px;
+            height: 2px;
+            background: var(--ink);
+        }
+
+        .nav-toggle span::before {
+            top: -6px;
+        }
+
+        .nav-toggle span::after {
+            top: 6px;
         }
 
         .container {
@@ -134,7 +176,7 @@
         }
 
         .eyebrow {
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'quicksand', sans-serif;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             font-size: 12px;
@@ -142,12 +184,12 @@
         }
 
         h1, h2 {
-            font-family: 'Patrick Hand', 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'auromiya', sans-serif;
             margin: 12px 0;
         }
 
         h3 {
-            font-family: 'Patrick Hand', 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'unbounded', sans-serif;
             margin: 12px 0;
         }
 
@@ -330,7 +372,7 @@
         .stat strong {
             display: block;
             font-size: 26px;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'unbounded', sans-serif;
         }
 
         .split {
@@ -425,7 +467,7 @@
             background: rgba(31, 111, 74, 0.12);
             color: var(--brand);
             font-weight: 700;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'unbounded', sans-serif;
         }
 
         .steps {
@@ -442,7 +484,7 @@
 
         .step span {
             font-weight: 700;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'auromiya', sans-serif;
             color: var(--brand);
         }
 
@@ -669,7 +711,7 @@
         }
 
         .editorial-quote {
-            font-family: 'Playfair Display', serif;
+            font-family: 'quicksand', serif;
             font-size: clamp(18px, 2.2vw, 26px);
             line-height: 1.5;
             padding: 18px 0 18px 18px;
@@ -707,7 +749,7 @@
             background: rgba(31, 111, 74, 0.12);
             color: var(--brand);
             font-weight: 700;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'auromiya', sans-serif;
         }
 
         @media (max-width: 900px) {
@@ -737,7 +779,7 @@
             background: rgba(31, 111, 74, 0.12);
             color: var(--brand);
             font-weight: 700;
-            font-family: 'Space Grotesk', sans-serif;
+            font-family: 'auromiya', sans-serif;
         }
 
         .section-contrast .step-tile {
@@ -813,7 +855,7 @@
         label {
             font-weight: 600;
             font-size: 14px;
-            font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'unbounded', sans-serif;
         }
 
         input {
@@ -821,7 +863,7 @@
             border-radius: 12px;
             border: 1px solid var(--border);
             font-size: 15px;
-            font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
+            font-family: 'unbounded', sans-serif;
         }
 
         input:focus {
@@ -842,110 +884,6 @@
             padding: 30px 6vw 40px;
             color: var(--muted);
             font-size: 13px;
-        }
-
-        .modal-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(16, 24, 16, 0.45);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            z-index: 9999;
-        }
-
-        .modal-backdrop.open {
-            display: flex;
-        }
-
-        .modal {
-            width: min(520px, 92vw);
-            background: #fff;
-            border-radius: 18px;
-            padding: 22px;
-            border: 1px solid var(--border);
-            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.2);
-        }
-
-        .modal h3 {
-            margin-bottom: 8px;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 18px;
-            justify-content: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .action-bar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        @media (max-width: 700px) {
-            .action-bar {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .action-bar .btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-
-        .btn-danger {
-            background: #d64545;
-            color: #fff;
-            border: 1px solid #c83a3a;
-        }
-
-        .btn-danger:hover {
-            filter: brightness(0.95);
-        }
-
-        .nav-toggle {
-            display: none;
-            align-items: center;
-            gap: 10px;
-            border: 1px solid var(--border);
-            background: #fff;
-            color: var(--ink);
-            padding: 10px 14px;
-            border-radius: 999px;
-            font-weight: 600;
-            font-family: 'Work Sans', system-ui, -apple-system, sans-serif;
-        }
-
-        .nav-toggle span {
-            width: 18px;
-            height: 2px;
-            background: var(--ink);
-            display: block;
-            position: relative;
-        }
-
-        .nav-toggle span::before,
-        .nav-toggle span::after {
-            content: "";
-            position: absolute;
-            left: 0;
-            width: 18px;
-            height: 2px;
-            background: var(--ink);
-        }
-
-        .nav-toggle span::before {
-            top: -6px;
-        }
-
-        .nav-toggle span::after {
-            top: 6px;
         }
 
         @media (max-width: 700px) {
@@ -1021,6 +959,7 @@
                     <a class="btn btn-ghost" href="{{ route('scanner.index') }}">Skaneri</a>
                     <a class="btn btn-ghost" href="{{ route('zones.index') }}">Zonat</a>
                     <a class="btn btn-ghost" href="{{ route('map.index') }}">Harta</a>
+                    <a class="btn btn-ghost" href="#">Komuniteti</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="btn btn-primary" type="submit">Dil</button>
@@ -1040,25 +979,13 @@
         </main>
 
         <footer class="footer">
-            Monitorim i ndotjes me prova vizuale nga dronët dhe fotografia në terren.
+            @hasSection('footer_content')
+                @yield('footer_content')
+            @else
+                Monitorim i ndotjes me prova vizuale nga dronët dhe fotografia në terren.
+            @endif
         </footer>
     </div>
-
-    <div class="modal-backdrop" id="confirm-modal" aria-hidden="true">
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-            <h3 id="confirm-title">Konfirmo fshirjen</h3>
-            <p>Je i sigurt që dëshiron ta fshish këtë ngarkim? Ky veprim fshin edhe analizat dhe evidencën.</p>
-            <form method="POST" id="confirm-form">
-                @csrf
-                @method('DELETE')
-                <div class="modal-actions">
-                    <button class="btn btn-ghost" type="button" id="confirm-cancel">Anulo</button>
-                    <button class="btn btn-primary" type="submit">Fshi</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
         const navToggle = document.querySelector('.nav-toggle');
         const navLinks = document.getElementById('nav-links');
@@ -1067,36 +994,6 @@
             navToggle.addEventListener('click', () => {
                 const isOpen = navLinks.classList.toggle('open');
                 navToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-            });
-        }
-
-        const modal = document.getElementById('confirm-modal');
-        const modalForm = document.getElementById('confirm-form');
-        const cancelBtn = document.getElementById('confirm-cancel');
-
-        document.querySelectorAll('.js-delete-upload').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const action = btn.getAttribute('data-action');
-                if (!action || !modal || !modalForm) return;
-                modalForm.setAttribute('action', action);
-                modal.classList.add('open');
-                modal.setAttribute('aria-hidden', 'false');
-            });
-        });
-
-        if (cancelBtn && modal) {
-            cancelBtn.addEventListener('click', () => {
-                modal.classList.remove('open');
-                modal.setAttribute('aria-hidden', 'true');
-            });
-        }
-
-        if (modal) {
-            modal.addEventListener('click', (event) => {
-                if (event.target === modal) {
-                    modal.classList.remove('open');
-                    modal.setAttribute('aria-hidden', 'true');
-                }
             });
         }
     </script>

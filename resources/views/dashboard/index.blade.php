@@ -5,7 +5,7 @@
     <div class="hero-grid">
         <div>
             <div class="pill">Paneli juaj</div>
-            <h1>Mirë se erdhe, {{ auth()->user()->name }}.</h1>
+            <h1>Mirë se erdhe, Admin.</h1>
             <p>Shihni gjendjen e analizave dhe aktivitetin e fundit të ngarkimeve.</p>
         </div>
         <div class="card">
