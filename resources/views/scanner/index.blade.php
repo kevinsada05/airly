@@ -31,7 +31,7 @@
     <div class="section" style="padding: 0; margin-top: 22px;">
         <div class="eyebrow">🧪 Skanimet e fundit</div>
         <h2>Rezultate të publikuara</h2>
-        <h3> Të gjitha rezultatet mund t'i shihni në faqen tonë në instagram <a href="https://www.instagram.com/airly2026?igsh=MXA0a3lxZG14bDZjbg==" target="_blank" rel="noopener noreferrer">@airly2026</a></h3>
+        <h3> Të gjitha rezultatet mund t'i shihni në faqen tonë në instagram <a class="instagram-link" href="https://www.instagram.com/airly2026?igsh=MXA0a3lxZG14bDZjbg==" target="_blank" rel="noopener noreferrer">@airly2026</a></h3>
         <div class="features" style="margin-top: 18px;">
         @forelse ($recentScans as $recentScan)
             <a class="feature" href="{{ route('scanner.index', ['scan' => $recentScan->id]) }}" style="display: block;">

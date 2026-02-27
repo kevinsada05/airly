@@ -107,6 +107,20 @@
             color: var(--brand);
         }
 
+        .btn-ghost.active {
+            border-color: var(--brand);
+            color: var(--brand);
+            background: rgba(63, 122, 86, 0.1);
+            font-weight: 700;
+        }
+
+        .instagram-link {
+            color: var(--brand);
+            font-weight: 700;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
         .nav-toggle {
             display: none;
             align-items: center;
@@ -955,22 +969,22 @@
             </div>
             <div class="nav-links" id="nav-links">
                 @auth
-                    <a class="btn btn-ghost" href="{{ route('dashboard') }}">Paneli</a>
-                    <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Ngarkimet</a>
-                    <a class="btn btn-ghost" href="{{ route('scanner.index') }}">Skaneri</a>
-                    <a class="btn btn-ghost" href="{{ route('zones.index') }}">Zonat</a>
-                    <a class="btn btn-ghost" href="{{ route('map.index') }}">Harta</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">Paneli</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('uploads.*') ? 'active' : '' }}" href="{{ route('uploads.index') }}">Ngarkimet</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('scanner.*') ? 'active' : '' }}" href="{{ route('scanner.index') }}">Skaneri</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('zones.*') ? 'active' : '' }}" href="{{ route('zones.index') }}">Zonat</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('map.*') ? 'active' : '' }}" href="{{ route('map.index') }}">Harta</a>
                     <a class="btn btn-ghost" href="#">Komuniteti</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="btn btn-primary" type="submit">Dil</button>
                     </form>
                 @else
-                    <a class="btn btn-ghost" href="{{ route('uploads.index') }}">Ngarkimet</a>
-                    <a class="btn btn-ghost" href="{{ route('scanner.index') }}">Skaneri</a>
-                    <a class="btn btn-ghost" href="{{ route('zones.index') }}">Zonat</a>
-                    <a class="btn btn-ghost" href="{{ route('map.index') }}">Harta</a>
-                    <a class="btn btn-ghost" href="{{ route('login') }}">Kyçu</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('uploads.*') ? 'active' : '' }}" href="{{ route('uploads.index') }}">Ngarkimet</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('scanner.*') ? 'active' : '' }}" href="{{ route('scanner.index') }}">Skaneri</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('zones.*') ? 'active' : '' }}" href="{{ route('zones.index') }}">Zonat</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('map.*') ? 'active' : '' }}" href="{{ route('map.index') }}">Harta</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('login') ? 'active' : '' }}" href="{{ route('login') }}">Kyçu</a>
                 @endauth
             </div>
         </nav>

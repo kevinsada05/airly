@@ -21,7 +21,7 @@
                 Platforma analizon imazhe ajrore dhe në terren për të identifikuar mbetje dhe ndotje.
                 Rezultatet organizohen sipas zonave dhe pasqyrohen me nivele rreziku të qarta.
             </p>
-            <h3>Të gjitha rezultatet mund t'i shihni në faqen tonë në instagram <a href="https://www.instagram.com/airly2026?igsh=MXA0a3lxZG14bDZjbg==" target="_blank" rel="noopener noreferrer">@airly2026</a></h3>
+            <h3>Të gjitha rezultatet mund t'i shihni në faqen tonë në instagram <a class="instagram-link" href="https://www.instagram.com/airly2026?igsh=MXA0a3lxZG14bDZjbg==" target="_blank" rel="noopener noreferrer">@airly2026</a></h3>
         </div>
         <div class="card accent">
             <div class="editorial-split">
