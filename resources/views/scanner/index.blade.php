@@ -13,7 +13,7 @@
                 <p>Rreziku:
                     @php
                         $sev = $scan->severity;
-                        $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                        $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe', 'purple' => 'Lejla'];
                     @endphp
                     {{ $labels[$sev] ?? '—' }}
                 </p>

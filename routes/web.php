@@ -1,48 +1,20 @@
 <?php
 
 use App\Models\ImageUpload;
-use App\Models\User;
 use App\Models\Zone;
 use App\Models\WasteScan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Route;
 use App\Jobs\AnalyzeImageUpload;
 
 Route::get('/', function (Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
-    $visibleIds = [];
-    if ($adminId) {
-        $visibleIds[] = $adminId;
-    }
-    if ($viewer && !$viewer->is_admin) {
-        $visibleIds[] = $viewer->id;
-    }
-
     $uploadsQuery = ImageUpload::query()
         ->with('analysisResult')
         ->latest();
 
-    if (!$viewer || !$viewer->is_admin) {
-        if ($visibleIds) {
-            $uploadsQuery->whereIn('user_id', $visibleIds);
-        } else {
-            $uploadsQuery->whereRaw('1=0');
-        }
-    }
-
     $scansQuery = WasteScan::query()->latest();
-    if (!$viewer || !$viewer->is_admin) {
-        if ($visibleIds) {
-            $scansQuery->whereIn('user_id', $visibleIds);
-        } else {
-            $scansQuery->whereRaw('1=0');
-        }
-    }
 
     $recentUploads = $uploadsQuery->take(6)->get();
     $recentScans = $scansQuery->take(6)->get();
@@ -67,6 +39,7 @@ Route::post('/login', function (Request $request) {
 
     if (Auth::attempt($credentials, $request->boolean('remember'))) {
         $request->session()->regenerate();
+        $request->user()?->forceFill(['is_admin' => true])->save();
 
         return redirect()->intended('/dashboard');
     }
@@ -75,6 +48,40 @@ Route::post('/login', function (Request $request) {
         'email' => 'Email ose fjalëkalim i pasaktë.',
     ])->onlyInput('email');
 })->middleware('guest')->name('login.submit');
+
+Route::get('/register', function () {
+    return view('auth.register');
+})->middleware('guest')->name('register');
+
+Route::post('/register', function (Request $request) {
+    $data = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+        'password' => ['required', 'string', 'min:8', 'confirmed'],
+    ], [
+        'name.required' => 'Emri është i detyrueshëm.',
+        'name.max' => 'Emri nuk mund të jetë më i gjatë se 255 karaktere.',
+        'email.required' => 'Email është i detyrueshëm.',
+        'email.email' => 'Email nuk është i vlefshëm.',
+        'email.max' => 'Email nuk mund të jetë më i gjatë se 255 karaktere.',
+        'email.unique' => 'Ky email ekziston tashmë.',
+        'password.required' => 'Fjalëkalimi është i detyrueshëm.',
+        'password.min' => 'Fjalëkalimi duhet të ketë të paktën 8 karaktere.',
+        'password.confirmed' => 'Konfirmimi i fjalëkalimit nuk përputhet.',
+    ]);
+
+    $user = \App\Models\User::query()->create([
+        'name' => $data['name'],
+        'email' => $data['email'],
+        'password' => $data['password'],
+        'is_admin' => true,
+    ]);
+
+    Auth::login($user);
+    $request->session()->regenerate();
+
+    return redirect()->route('dashboard');
+})->middleware('guest')->name('register.submit');
 
 
 Route::post('/logout', function (Request $request) {
@@ -126,28 +133,9 @@ Route::get('/dashboard', function () {
 })->middleware('auth')->name('dashboard');
 
 Route::get('/uploads', function (Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
     $query = ImageUpload::query()
         ->with('wasteScan')
         ->latest();
-
-    if (!$viewer || !$viewer->is_admin) {
-        $visibleIds = [];
-        if ($adminId) {
-            $visibleIds[] = $adminId;
-        }
-        if ($viewer) {
-            $visibleIds[] = $viewer->id;
-        }
-
-        if ($visibleIds) {
-            $query->whereIn('user_id', $visibleIds);
-        } else {
-            $query->whereRaw('1=0');
-        }
-    }
 
     $uploads = $query->paginate(12);
 
@@ -196,21 +184,6 @@ Route::post('/uploads', function (Request $request) {
 })->middleware('auth')->name('uploads.store');
 
 Route::get('/uploads/{upload}', function (ImageUpload $upload, Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
-    if (!$viewer || !$viewer->is_admin) {
-        $visibleIds = [];
-        if ($adminId) {
-            $visibleIds[] = $adminId;
-        }
-        if ($viewer) {
-            $visibleIds[] = $viewer->id;
-        }
-
-        abort_unless($visibleIds && in_array($upload->user_id, $visibleIds, true), 403);
-    }
-
     $imageUrl = $request->getSchemeAndHttpHost() . '/storage/' . $upload->file_path;
 
     $upload->load(['wasteScan', 'zones']);
@@ -237,37 +210,10 @@ Route::delete('/uploads/{upload}', function (ImageUpload $upload, Request $reque
 })->middleware('auth')->name('uploads.destroy');
 
 Route::get('/zones', function (Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
     $zonesQuery = Zone::query()->orderByRaw("case current_severity when 'red' then 1 when 'orange' then 2 when 'green' then 3 else 4 end")
         ->orderBy('name');
 
-    if (!$viewer || !$viewer->is_admin) {
-        $visibleIds = [];
-        if ($adminId) {
-            $visibleIds[] = $adminId;
-        }
-        if ($viewer) {
-            $visibleIds[] = $viewer->id;
-        }
-
-        if ($visibleIds) {
-            $zonesQuery->withCount([
-                'imageUploads as image_uploads_count' => function ($query) use ($visibleIds) {
-                    $query->whereIn('image_uploads.user_id', $visibleIds);
-                },
-            ]);
-        } else {
-            $zonesQuery->withCount([
-                'imageUploads as image_uploads_count' => function ($query) {
-                    $query->whereRaw('1=0');
-                },
-            ]);
-        }
-    } else {
-        $zonesQuery->withCount('imageUploads');
-    }
+    $zonesQuery->withCount('imageUploads');
 
     $zones = $zonesQuery->get();
 
@@ -275,28 +221,9 @@ Route::get('/zones', function (Request $request) {
 })->name('zones.index');
 
 Route::get('/zones/{zone}', function (Zone $zone, Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
     $uploadsQuery = $zone->imageUploads()
         ->with('analysisResult')
         ->latest();
-
-    if (!$viewer || !$viewer->is_admin) {
-        $visibleIds = [];
-        if ($adminId) {
-            $visibleIds[] = $adminId;
-        }
-        if ($viewer) {
-            $visibleIds[] = $viewer->id;
-        }
-
-        if ($visibleIds) {
-            $uploadsQuery->whereIn('image_uploads.user_id', $visibleIds);
-        } else {
-            $uploadsQuery->whereRaw('1=0');
-        }
-    }
 
     $uploads = $uploadsQuery->get()
         ->map(function (ImageUpload $upload) {
@@ -308,12 +235,26 @@ Route::get('/zones/{zone}', function (Zone $zone, Request $request) {
 })->name('zones.show');
 
 Route::get('/map', function () {
-    $zones = Zone::query()->get()->map(function (Zone $zone) {
+    $zones = Zone::query()
+        ->with(['imageUploads.wasteScan'])
+        ->get()
+        ->map(function (Zone $zone) {
+            $hasBurning = $zone->imageUploads->contains(function (ImageUpload $upload) {
+                $scan = $upload->wasteScan;
+                if (!$scan) {
+                    return false;
+                }
+
+                $burningText = mb_strtolower(trim((string) $scan->item_type . ' ' . (string) $scan->warnings));
+                return (bool) preg_match('/\b(djeg|zjarr|tym|djegie)\b/u', $burningText);
+            });
+
         return [
             'id' => $zone->id,
             'name' => $zone->name,
             'severity' => $zone->current_severity->value ?? $zone->current_severity,
             'polygon' => $zone->polygon,
+            'has_burning' => $hasBurning,
         ];
     });
 
@@ -323,52 +264,14 @@ Route::get('/map', function () {
 })->name('map.index');
 
 Route::get('/scanner', function (Request $request) {
-    $viewer = $request->user();
-    $adminId = User::query()->where('is_admin', true)->value('id');
-
     $scanId = $request->query('scan');
     $scan = null;
 
     if ($scanId) {
-        $scanQuery = WasteScan::query()->where('id', $scanId);
-
-        if (!$viewer || !$viewer->is_admin) {
-            $visibleIds = [];
-            if ($adminId) {
-                $visibleIds[] = $adminId;
-            }
-            if ($viewer) {
-                $visibleIds[] = $viewer->id;
-            }
-
-            if ($visibleIds) {
-                $scanQuery->whereIn('user_id', $visibleIds);
-            } else {
-                $scanQuery->whereRaw('1=0');
-            }
-        }
-
-        $scan = $scanQuery->first();
+        $scan = WasteScan::query()->where('id', $scanId)->first();
     }
 
-    $recentScansQuery = WasteScan::query()->latest();
-    if (!$viewer || !$viewer->is_admin) {
-        $visibleIds = [];
-        if ($adminId) {
-            $visibleIds[] = $adminId;
-        }
-        if ($viewer) {
-            $visibleIds[] = $viewer->id;
-        }
-
-        if ($visibleIds) {
-            $recentScansQuery->whereIn('user_id', $visibleIds);
-        } else {
-            $recentScansQuery->whereRaw('1=0');
-        }
-    }
-
-    $recentScans = $recentScansQuery->take(8)->get();
+    $recentScans = WasteScan::query()->latest()->take(8)->get();
     $imageUrl = $scan ? $request->getSchemeAndHttpHost() . '/storage/' . $scan->file_path : null;
 
     return view('scanner.index', compact('scan', 'imageUrl', 'recentScans'));

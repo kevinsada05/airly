@@ -985,6 +985,7 @@
                     <a class="btn btn-ghost {{ request()->routeIs('zones.*') ? 'active' : '' }}" href="{{ route('zones.index') }}">Zonat</a>
                     <a class="btn btn-ghost {{ request()->routeIs('map.*') ? 'active' : '' }}" href="{{ route('map.index') }}">Harta</a>
                     <a class="btn btn-ghost {{ request()->routeIs('login') ? 'active' : '' }}" href="{{ route('login') }}">Kyçu</a>
+                    <a class="btn btn-ghost {{ request()->routeIs('register') ? 'active' : '' }}" href="{{ route('register') }}">Regjistrohu</a>
                 @endauth
             </div>
         </nav>

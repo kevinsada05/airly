@@ -177,7 +177,11 @@
             <a class="feature" href="{{ route('uploads.show', $upload) }}" style="display: block;">
                 <img src="{{ url('/storage/' . $upload->file_path) }}" alt="Imazh i publikuar" style="width: 100%; border-radius: 14px; display: block; margin-bottom: 10px;">
                 <strong>{{ optional($upload->created_at)->format('d.m.Y H:i') }}</strong>
-                <p>Statusi: {{ $upload->status?->value ?? '—' }}</p>
+                <p>Statusi: @php
+                    $status = $upload->status?->value ?? $upload->status;
+                    $labels = ['pending' => 'Në pritje', 'processing' => 'Në përpunim', 'processed' => 'E përfunduar', 'failed' => 'Dështoi'];
+                @endphp
+                {{ $labels[$status] ?? '—' }}</p>
                 <p>Shfaq detajet</p>
             </a>
         @empty

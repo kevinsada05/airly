@@ -36,15 +36,16 @@ class WasteScanAnalyzer
         $prompt = <<<PROMPT
 Kthe vetëm JSON me fushat:
 - item_type (string, p.sh. grumbullim mbetjesh, ndotje e shpërndarë, djegie mbetjesh)
-- severity (string: green | orange | red)
+- severity (string: green | orange | purple)
 - instructions (string, 6-7 fjali, udhëzime të qarta)
 - warnings (string opsionale)
 
 Rregulla:
 - Mos përdor "e paidentifikueshme". Gjithmonë zgjidh një kategori relevante.
-- Nëse ka shenja të djegies (tym/zjarr/djegie), vendos item_type: "djegie mbetjesh" dhe severity: "red".
+- Nëse ka shenja të djegies (tym/zjarr/djegie), vendos item_type: "djegie mbetjesh" dhe severity: "purple".
 - Nëse ka grumbullim mbetjesh pa zjarr, vendos severity: "orange".
 - Nëse ndotja është e lehtë ose e shpërndarë, vendos severity: "orange".
+- Nëse duken mjete elektronike ose bateri, shto paralajmërim të qartë për rrezikun e tyre.
 
 Udhëzime për `instructions`:
 - Shkruaj 6-7 fjali të plota, jo lista.
@@ -82,8 +83,14 @@ PROMPT;
         $analysis = self::parseJson($analysisText);
 
         $itemType = mb_strtolower((string) ($analysis['item_type'] ?? ''));
-        $warnings = mb_strtolower((string) ($analysis['warnings'] ?? ''));
-        $mentionsBurning = (bool) preg_match('/\\b(djeg|zjarr|tym|djegie)\\b/u', $warnings);
+        $rawWarnings = trim((string) ($analysis['warnings'] ?? ''));
+        $combinedText = mb_strtolower(trim(
+            (string) ($analysis['item_type'] ?? '') . ' ' .
+            (string) ($analysis['warnings'] ?? '') . ' ' .
+            (string) ($analysis['instructions'] ?? '')
+        ));
+        $mentionsBurning = (bool) preg_match('/\\b(djeg|zjarr|tym|djegie)\\b/u', $combinedText);
+        $mentionsElectronics = (bool) preg_match('/\\b(elektronik|elektronike|elektronikeve|bateri|akumulator|telefon|laptop|kompjut|tv|televiz|printer|kabllo|kabel|e-waste|ewaste)\\b/u', $combinedText);
 
         if ($mentionsBurning) {
             $itemType = 'djegie mbetjesh';
@@ -100,7 +107,26 @@ PROMPT;
             $normalizedType = 'ndotje e mundshme';
         }
 
-        $severity = $mentionsBurning ? 'red' : 'orange';
+        $severity = $mentionsBurning ? 'purple' : 'orange';
+        $electronicsWarnings = [
+            'Kujdes nga mjetet elektronike dhe bateritë pasi kanë radioaktivitet dhe janë të rrezikshme.',
+            'Paralajmërim: mbetjet elektronike dhe bateritë mund të jenë shumë të rrezikshme, shmangni kontaktin direkt.',
+            'Kujdes i shtuar: pajisjet elektronike dhe bateritë e hedhura kërkojnë trajtim të veçantë për shkak të rrezikut.',
+            'Mos i prekni pa mbrojtje mjetet elektronike dhe bateritë; mund të paraqesin rrezik serioz për shëndetin.',
+            'Rrezik potencial: mbetjet elektronike dhe bateritë mund të lëshojnë substanca të dëmshme në mjedis.',
+            'Kujdes maksimal: pajisjet elektronike të djegura ose të dëmtuara mund të jenë toksike dhe të pasigurta.',
+            'Paralajmërim për sigurinë: bateritë dhe mjetet elektronike duhet të trajtohen vetëm me masa mbrojtëse.',
+            'Shmangni ekspozimin: kontakti me mbetje elektronike dhe bateri të vjetra mund të jetë i rrezikshëm.',
+            'Zona mund të përmbajë e-waste të rrezikshëm; mos i lëvizni pajisjet elektronike ose bateritë pa pajisje mbrojtëse.',
+            'Kujdes: mbetjet elektronike dhe bateritë kërkojnë grumbullim të specializuar dhe nuk duhen trajtuar si mbetje të zakonshme.',
+        ];
+        $electronicsWarning = $electronicsWarnings[array_rand($electronicsWarnings)];
+
+        if ($mentionsElectronics) {
+            $rawWarnings = $rawWarnings !== ''
+                ? $rawWarnings . ' ' . $electronicsWarning
+                : $electronicsWarning;
+        }
 
         $templates = [
             'djegie mbetjesh' => "Në këtë zonë ka shenja të djegies së mbetjeve dhe duhet shmangur qëndrimi i gjatë. Mos u afroni me zjarrin ose me mbetjet e ndezura, sepse tymi është i dëmshëm. Nëse është e sigurt, dokumentoni zonën nga distanca dhe mbani rrugët e aksesit të lira. Mos i shtoni mbetje të tjera dhe mos e nxisni zjarrin. Njoftoni shërbimet lokale ose komunën për ndërhyrje dhe pastrim. Nëse ka rrezik të përhapjes, kontaktoni urgjencën lokale.",
@@ -116,7 +142,7 @@ PROMPT;
             'severity' => $severity,
             'recyclable' => null,
             'instructions' => $instructions,
-            'warnings' => $analysis['warnings'] ?? null,
+            'warnings' => $rawWarnings !== '' ? $rawWarnings : null,
             'raw_output' => $responseJson,
             'model_name' => $responseJson['model'] ?? $model,
         ];

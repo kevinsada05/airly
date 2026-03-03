@@ -31,6 +31,10 @@
                 </div>
                 <button class="btn btn-primary" type="submit">Kyçu</button>
             </form>
+            <p style="margin-top: 14px;">
+                Nuk ke llogari?
+                <a class="btn btn-ghost" href="{{ route('register') }}">Regjistrohu</a>
+            </p>
         </div>
     </div>
 </section>

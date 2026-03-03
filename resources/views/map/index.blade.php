@@ -38,7 +38,9 @@
             return;
         }
 
-        const color = zone.severity === 'red'
+        const color = zone.has_burning
+            ? '#a64dff'
+            : zone.severity === 'red'
             ? '#d74b4b'
             : (zone.severity === 'orange' ? '#f0a23a' : '#4f8f5a');
 

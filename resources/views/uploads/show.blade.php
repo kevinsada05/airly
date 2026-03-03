@@ -59,7 +59,7 @@
                     <h3>{{ $upload->wasteScan->item_type ?? '—' }}</h3>
                     <p>Rreziku: @php
                         $sev = $upload->wasteScan->severity;
-                        $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe'];
+                        $labels = ['green' => 'Gjelbër', 'orange' => 'Portokalli', 'red' => 'Kuqe', 'purple' => 'Lejla'];
                     @endphp
                     {{ $labels[$sev] ?? '—' }}</p>
                     <p>Riciklueshme: {{ $upload->wasteScan->recyclable === null ? '—' : ($upload->wasteScan->recyclable ? 'Po' : 'Jo') }}</p>

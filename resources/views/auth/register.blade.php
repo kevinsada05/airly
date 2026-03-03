@@ -4,9 +4,8 @@
 <section class="hero">
     <div class="hero-grid">
         <div>
-            <div class="eyebrow">Krijo llogari</div>
-            <h1>Regjistrohu për monitorim më të mirë</h1>
-            <p>Ndihmo në identifikimin e ndotjes me evidencë vizuale.</p>
+            <h1>Krijo Llogari</h1>
+            <p>Ndihmo në identifikimin e ndotjeve me pamje vizuale.</p>
         </div>
         <div class="card">
             @if ($errors->any())
